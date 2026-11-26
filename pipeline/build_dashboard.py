@@ -58,6 +58,18 @@ select,textarea{width:100%;margin-top:8px;background:#0d1320;color:var(--txt);bo
 .small{font-size:11px;color:var(--mut)}
 .answer{white-space:pre-wrap;margin-top:10px;font-size:13px;line-height:1.55;color:#dbe3f3}.answer:empty{display:none}
 .jg{display:inline-flex;gap:6px;flex-wrap:wrap;margin-top:8px}.preset{cursor:pointer}
+.flowwrap{padding:12px 20px 0}
+.flow{display:flex;align-items:stretch;overflow-x:auto;padding-bottom:4px}
+.stage{flex:1 1 0;min-width:122px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.stage .sn{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+.stage .sv{font-size:15px;font-weight:700;margin:3px 0 1px}.stage .sd{font-size:10.5px;color:var(--mut);line-height:1.3}
+.stage.ml{border-color:var(--acc)}.stage.ml .sv{color:var(--acc)}
+.stage.shap{border-color:var(--cred)}.stage.shap .sv{color:var(--cred)}
+.stage.llm{border-color:var(--c2)}.stage.llm .sv{color:var(--c2)}
+.flowarrow{display:flex;align-items:center;color:var(--mut);padding:0 5px;font-size:15px;flex:0 0 auto}
+.ribbon{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ribbon .rb{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:12px;color:var(--mut)}
+.ribbon .rb b{color:var(--txt)}.ribbon .rb.good b{color:var(--low)}.ribbon .rb.crit b{color:var(--crit)}
 @media (max-width:1100px){main{grid-template-columns:1fr}.row2{grid-template-columns:1fr}.kpis{flex-wrap:wrap}.kpi{min-width:40%}}
 </style></head><body>
 <header><div class="logo">NSM <span>Hunt Console</span></div>
@@ -66,6 +78,8 @@ select,textarea{width:100%;margin-top:8px;background:#0d1320;color:var(--txt);bo
 <span class="chip">ML <b id="model"></b> + SHAP</span>
 <span class="chip">LLM <b id="llmname">Ollama</b> · self-hosted · open source</span>
 <span style="flex:1"></span><span class="chip">Analyst <b>SOC T2</b></span></header>
+<section class="flowwrap"><h3 style="margin:0 0 8px">Pipeline · packets become an answer the analyst can read</h3>
+ <div class="flow" id="flow"></div><div class="ribbon" id="ribbon"></div></section>
 <div class="kpis" id="kpis"></div>
 <main>
  <section class="panel"><h3>Hunt queue · ranked</h3>
@@ -92,7 +106,7 @@ select,textarea{width:100%;margin-top:8px;background:#0d1320;color:var(--txt);bo
  <section class="panel tri" id="tri"></section>
 </main>
 <script>
-const D=__DATA__, T=__TRIAGE__, LIVE=__LIVE__, QA=__QA__;
+const D=__DATA__, T=__TRIAGE__, LIVE=__LIVE__, QA=__QA__, MET=__METRICS__;
 const COL={"Lateral Movement":"var(--lm)","Command and Control":"var(--c2)","Credential Access":"var(--cred)","Discovery":"var(--disc)"};
 const SHORT={"Lateral Movement":"Lateral Movement","Command and Control":"C2","Credential Access":"Credential Access","Discovery":"Discovery"};
 const labels={}; let cur=0, curHost=0, filt="all";
@@ -103,6 +117,23 @@ const crit=D.cases.filter(c=>c.severity==="critical").length;
 $("kpis").innerHTML=[[D.hosts_scored,"hosts scored today"],[D.findings_total,"hunt hits (12 hunts)"],[D.findings_suppressed,"auto-suppressed (known admin behaviour)"],[D.cases.length,"cases in queue"],[crit,"critical"],[D.touched_total!=null?D.touched_total:"-","hosts the attack reached"]]
  .map(([v,l],i)=>`<div class="kpi"><div class="v" style="${i==4?'color:var(--crit)':''}">${v}</div><div class="l">${l}</div></div>`).join("");
 $("supp").textContent=`${D.findings_suppressed} hits hidden: SCCM01 creates remote services on most baseline days (allow-listed by the baseline, not by hand).`;
+(function(){const S=[
+ ["Zeek sensor","9 log types","packets → JSON logs",""],
+ ["Feature extraction","per host","conn/dns/ssl/kerberos/smb…",""],
+ ["Isolation Forest",(D.hosts_scored!=null?D.hosts_scored+" hosts":"hosts"),"risk score vs the host's own baseline","ml"],
+ ["SHAP","top reasons","why each score is high","shap"],
+ ["Store",(D.findings_total!=null?D.findings_total+" findings":"findings"),"SQLite · the LLM reads only this",""],
+ ["Analyst asks","question","plain language",""],
+ ["LLM answer",(MET.llm_short||"qwen3"),"local Ollama · cites finding ids","llm"],
+ ["LLM judge",(MET.verdict||"faithfulness"),"a 2nd model grades the answer","llm"]];
+ $("flow").innerHTML=S.map((s,i)=>`<div class="stage ${s[3]}"><div class="sn">${s[0]}</div><div class="sv">${s[1]}</div><div class="sd">${s[2]}</div></div>`+(i<S.length-1?'<div class="flowarrow">→</div>':'')).join("");
+ const m=MET.detection||{},rb=[];
+ if(m.techniques_detected!=null)rb.push(["good",`<b>${m.techniques_detected}/${m.techniques_total}</b> attack techniques detected`]);
+ if(m.compromised_case_rank)rb.push(["crit",`compromised host ranked <b>#${m.compromised_case_rank}</b>`]);
+ if(m.host_precision!=null)rb.push(["good",`host precision / recall <b>${Math.round(m.host_precision*100)}% / ${Math.round(m.host_recall*100)}%</b>`]);
+ if(m.suppressed_known_admin!=null)rb.push(["",`<b>${m.suppressed_known_admin}</b> known-admin hits auto-suppressed`]);
+ rb.push(["",`LLM + judge run <b>locally</b> (docker compose · open-source models)`]);
+ $("ribbon").innerHTML=rb.map(r=>`<span class="rb ${r[0]}">${r[1]}</span>`).join("")})();
 const HUNTS=__HUNTS__;
 function lib(){const n={};D.cases.forEach(c=>c.findings.forEach(f=>n[f.hunt]=(n[f.hunt]||0)+1));
  $("lib").innerHTML=Object.entries(HUNTS).map(([id,h])=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0;font-size:11.5px">
@@ -196,8 +227,9 @@ sel(0);
 </script></body></html>"""
 
 
-def render(d, t, live=False, qa=None):
-    """HTML for a scored day. live=True: the page talks to server.py (/api/ask, /api/label)."""
+def render(d, t, live=False, qa=None, metrics=None):
+    """HTML for a scored day. live=True: the page talks to server.py (/api/ask, /api/label).
+    metrics: optional {detection, llm_short, verdict} to fill the pipeline banner + results ribbon."""
     from hunts import HUNTS
     d["touched_total"] = len({t["ip"] for c in d.get("cases", []) for t in c.get("touched_hosts", [])})
     if not d.get("day"):
@@ -207,7 +239,8 @@ def render(d, t, live=False, qa=None):
         c.pop("zeek_rows", None)
     j = lambda o: json.dumps(o, default=float).replace("</", "<\\/")
     return (HTML.replace("__HUNTS__", j(HUNTS)).replace("__DATA__", j(d)).replace("__TRIAGE__", j(t))
-            .replace("__LIVE__", "true" if live else "false").replace("__QA__", j(qa or {})))
+            .replace("__LIVE__", "true" if live else "false").replace("__QA__", j(qa or {}))
+            .replace("__METRICS__", j(metrics or {})))
 
 
 def main():
@@ -220,12 +253,17 @@ def main():
     a = ap.parse_args()
     d = json.load(open(a.cases))
     t = json.load(open(a.triage))
-    qa = {}
+    qa, met = {}, {}
     if a.qa:
-        for q in json.load(open(a.qa))["qa"]:
+        mj = json.load(open(a.qa))
+        for q in mj["qa"]:
             r = q["llm"] or q["template"]
             qa[q["question"]] = {"answer": r["answer"], "model": r["model"], "judge": r["judge"], "latency_s": r.get("latency_s")}
-    open(a.out, "w").write(render(d, t, qa=qa))
+        v = next((q["llm"]["judge"].get("verdict") for q in mj["qa"] if q.get("llm")), None)
+        met = {"detection": mj.get("detection", {}),
+               "llm_short": (mj["llm_model"].split(":")[0] if mj.get("llm_available") else "qwen3"),
+               "verdict": v or "faithfulness"}
+    open(a.out, "w").write(render(d, t, qa=qa, metrics=met))
     print("dashboard ->", a.out)
     if a.png:
         from playwright.sync_api import sync_playwright
