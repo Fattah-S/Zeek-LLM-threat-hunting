@@ -1,0 +1,12 @@
+{
+  "10.77.0.10":  {"name": "DC01",   "role": "domain controller"},
+  "10.77.0.20":  {"name": "FS01",   "role": "file server"},
+  "10.77.0.60":  {"name": "SCCM01", "role": "software deployment"},
+  "10.77.0.101": {"name": "WS-01",  "role": "workstation"},
+  "10.77.0.102": {"name": "WS-02",  "role": "workstation"},
+  "10.77.0.103": {"name": "WS-03",  "role": "workstation"},
+  "10.77.0.104": {"name": "WS-04",  "role": "workstation"},
+  "10.77.0.105": {"name": "WS-05",  "role": "workstation"},
+  "10.77.0.240": {"name": "internet", "role": "simulated internet"},
+  "10.77.0.250": {"name": "c2",     "role": "external"}
+}

@@ -147,7 +147,8 @@ def offline_card(case):
                      + (f" to {', '.join(moved)}" if moved else ""))
     if creds:
         parts.append("credential theft activity (" + ", ".join(dict.fromkeys(f["name"].split(" (")[0] for f in creds)) + ")")
-    acc = sorted({f["detail"].split("'")[1] for f in fs if "'" in f["detail"]})
+    import re as _re
+    acc = sorted({m.group(1) for f in fs for m in [_re.search(r"as '([^']+)'", f["detail"])] if m})
     steps = [f"Isolate {', '.join(srcs[:2])} in EDR and capture memory before reboot"]
     if any(f["hunt"] == "LM-07" for f in fs):
         steps.append("Treat the domain as compromised: DCSync means password hashes (possibly krbtgt) were read. Plan a double krbtgt reset")

@@ -56,13 +56,15 @@ td{padding:6px;border-bottom:1px solid #1c2538;vertical-align:top}td.mono,.mono{
 .btn.tp{border-color:var(--crit);color:var(--crit)}.btn.fp{border-color:var(--low);color:var(--low)}.btn.on.tp{background:var(--crit);color:#fff}.btn.on.fp{background:var(--low);color:#04101f}
 select,textarea{width:100%;margin-top:8px;background:#0d1320;color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:7px;font:inherit}
 .small{font-size:11px;color:var(--mut)}
+.answer{white-space:pre-wrap;margin-top:10px;font-size:13px;line-height:1.55;color:#dbe3f3}.answer:empty{display:none}
+.jg{display:inline-flex;gap:6px;flex-wrap:wrap;margin-top:8px}.preset{cursor:pointer}
 @media (max-width:1100px){main{grid-template-columns:1fr}.row2{grid-template-columns:1fr}.kpis{flex-wrap:wrap}.kpi{min-width:40%}}
 </style></head><body>
 <header><div class="logo">NSM <span>Hunt Console</span></div>
 <span class="chip">Hunt day <b id="day"></b></span>
-<span class="chip"><span class="dot"></span>Zeek → Sentinel <b>connected</b></span>
+<span class="chip"><span class="dot"></span>Zeek sensor <b id="src">logs</b></span>
 <span class="chip">ML <b id="model"></b> + SHAP</span>
-<span class="chip">LLM <b>Qwen3 14B</b> · Ollama (self-hosted) · open source</span>
+<span class="chip">LLM <b id="llmname">Ollama</b> · self-hosted · open source</span>
 <span style="flex:1"></span><span class="chip">Analyst <b>SOC T2</b></span></header>
 <div class="kpis" id="kpis"></div>
 <main>
@@ -73,6 +75,11 @@ select,textarea{width:100%;margin-top:8px;background:#0d1320;color:var(--txt);bo
   <h3 style="margin-top:16px">Hunt library · hits today</h3><div id="lib"></div>
  </section>
  <section class="center">
+  <div class="panel ask" id="askp"><h3>Ask the network · answers come from the stored ML + SHAP + hunt output</h3>
+   <div style="display:flex;gap:8px"><input id="q" placeholder="e.g. What abnormal behaviour happened on the network today?" style="flex:1;background:#0d1320;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit">
+   <button class="btn" style="flex:0 0 90px;border-color:var(--acc);color:var(--acc)" onclick="askQ()">Ask</button></div>
+   <div class="tags" style="margin-top:8px" id="presets"></div>
+   <div id="ans" class="answer"></div></div>
   <div class="panel"><div class="ch"><div class="score" id="cscore"></div><div><div class="id" id="cid"></div><div class="title" id="ctitle"></div></div></div>
    <div class="chain" id="chain"></div></div>
   <div class="row2">
@@ -85,15 +92,15 @@ select,textarea{width:100%;margin-top:8px;background:#0d1320;color:var(--txt);bo
  <section class="panel tri" id="tri"></section>
 </main>
 <script>
-const D=__DATA__, T=__TRIAGE__;
+const D=__DATA__, T=__TRIAGE__, LIVE=__LIVE__, QA=__QA__;
 const COL={"Lateral Movement":"var(--lm)","Command and Control":"var(--c2)","Credential Access":"var(--cred)","Discovery":"var(--disc)"};
 const SHORT={"Lateral Movement":"Lateral Movement","Command and Control":"C2","Credential Access":"Credential Access","Discovery":"Discovery"};
 const labels={}; let cur=0, curHost=0, filt="all";
 const $=id=>document.getElementById(id);
 const hhmm=ts=>{const h=(ts%86400)/3600;return String(Math.floor(h)).padStart(2,"0")+":"+String(Math.floor(h%1*60)).padStart(2,"0")};
-$("day").textContent=D.day; $("model").textContent=D.model;
+$("day").textContent=D.day; $("model").textContent=D.model; if(D.llm_model)$("llmname").textContent=D.llm_model; if(D.source)$("src").textContent=D.source;
 const crit=D.cases.filter(c=>c.severity==="critical").length;
-$("kpis").innerHTML=[[D.hosts_scored,"hosts scored today"],[D.findings_total,"hunt hits (12 hunts)"],[D.findings_suppressed,"auto-suppressed (known admin behaviour)"],[D.cases.length,"cases in queue"],[crit,"critical"],["~4 min","LLM triage for all cases"]]
+$("kpis").innerHTML=[[D.hosts_scored,"hosts scored today"],[D.findings_total,"hunt hits (12 hunts)"],[D.findings_suppressed,"auto-suppressed (known admin behaviour)"],[D.cases.length,"cases in queue"],[crit,"critical"],[D.touched_total!=null?D.touched_total:"-","hosts the attack reached"]]
  .map(([v,l],i)=>`<div class="kpi"><div class="v" style="${i==4?'color:var(--crit)':''}">${v}</div><div class="l">${l}</div></div>`).join("");
 $("supp").textContent=`${D.findings_suppressed} hits hidden: SCCM01 creates remote services on most baseline days (allow-listed by the baseline, not by hand).`;
 const HUNTS=__HUNTS__;
@@ -159,12 +166,24 @@ function tri(c){ const t=T[c.case_id]; if(!t){$("tri").innerHTML="";return}
  <div class="sec">Evidence (cited)</div><ul>${t.evidence.slice(0,4).map(e=>`<li>${e.claim} <span class="cite">[${e.source}]</span></li>`).join("")}</ul>
  ${t.benign_explanations&&t.benign_explanations.length?`<div class="sec">Could it be benign?</div><ul>${t.benign_explanations.map(s=>`<li>${s}</li>`).join("")}</ul>`:''}
  <div class="sec">Recommended next steps</div><ol>${t.next_steps.slice(0,5).map(s=>`<li>${s}</li>`).join("")}</ol>
- <div class="foot">Generated by <b>${t.generated_by.startsWith("offline")?"qwen3:14b on Ollama (configured)":t.generated_by}</b> · self-hosted, no data leaves the network · evidence pulled from Sentinel by Zeek uid${t.generated_by.startsWith("offline")?` · <i>demo text: ${t.generated_by}</i>`:''}</div>
+ <div class="foot">Generated by <b>${t.generated_by.startsWith("offline")?(D.llm_model||"Ollama")+" (configured)":t.generated_by}</b> · self-hosted, no data leaves the network · evidence pulled from the store by Zeek uid${t.generated_by.startsWith("offline")?` · <i>demo text: ${t.generated_by}</i>`:''}</div>
  <div class="sec">Analyst decision</div>
  <div class="dec"><button class="btn tp ${labels[c.case_id]=='TP'?'on':''}" onclick="mark('TP')">✓ True positive</button><button class="btn fp ${labels[c.case_id]=='FP'?'on':''}" onclick="mark('FP')">✕ False positive</button></div>
  <select id="reason"><option>Reason: confirmed malicious (EDR / host evidence)</option><option>Known admin activity (change ticket)</option><option>Benign software / update agent</option><option>Needs more data</option></select>
  <div class="small" style="margin-top:8px">Labels feed <span class="mono">train_feedback.py</span> → XGBoost re-ranks tomorrow's queue. <a href="#" onclick="exportCSV();return false" style="color:var(--acc)">Export labels.csv</a></div>`}
-function mark(l){labels[D.cases[cur].case_id]=l;tri(D.cases[cur]);queue()}
+function mark(l){labels[D.cases[cur].case_id]=l;tri(D.cases[cur]);queue();
+ if(LIVE){const c=D.cases[cur];fetch("/api/label",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({case_id:c.case_id,host:c.hosts[0].name,label:l,reason:($("reason")||{}).value||""})})}}
+const PRESETS=["What abnormal behaviour happened on the network today?","Which hosts should I investigate first, and why did the model flag them?","Is there any sign of credential theft or lateral movement?"];
+$("presets").innerHTML=PRESETS.map(p=>`<span class="tag preset" onclick="$('q').value=this.textContent;askQ()">${p}</span>`).join("");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function showAnswer(r){const j=r.judge||{};const vc=j.verdict==="pass"?"var(--low)":j.verdict==="fail"?"var(--crit)":"var(--mut)";
+ $("ans").innerHTML=`<div>${esc(r.answer)}</div><div class="jg"><span class="chip">answered by <b>${esc(r.model||"-")}</b>${r.latency_s?` · ${r.latency_s}s`:""}</span>
+ <span class="chip" style="border-color:${vc}">LLM judge <b style="color:${vc}">&nbsp;${esc(j.verdict||"n/a")}</b>${j.faithfulness?` · faithfulness ${j.faithfulness}/5 · relevance ${j.relevance}/5 · completeness ${j.completeness}/5 · actionability ${j.actionability}/5`:""}</span>
+ ${j.judge_model?`<span class="chip">judge <b>${esc(j.judge_model)}</b></span>`:""}${(j.unsupported_claims||[]).length?`<span class="chip" style="border-color:var(--crit)">unsupported: ${esc(j.unsupported_claims.join(" | "))}</span>`:""}</div>`}
+function askQ(){const q=$("q").value.trim();if(!q)return;if(!LIVE){if(window.QA&&QA[q])showAnswer(QA[q]);else $("ans").textContent="Static page: start the lab (docker compose up) to ask questions.";return}
+ $("ans").textContent="Retrieving today's top behaviours from the store and asking the LLM ...";
+ fetch("/api/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})}).then(r=>r.json()).then(showAnswer).catch(e=>$("ans").textContent="error: "+e)}
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter")askQ()});
 function exportCSV(){const rows=[["case_id","host","label","reason","analyst"]];D.cases.forEach(c=>{if(labels[c.case_id])c.hosts.filter(h=>h.hunt_score>0||c.hosts.length==1).forEach(h=>rows.push([c.case_id,h.name,labels[c.case_id],"dashboard","analyst"]))});
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));a.download="labels.csv";a.click()}
 function sel(i){cur=i;curHost=0;const c=D.cases[i];
@@ -177,22 +196,36 @@ sel(0);
 </script></body></html>"""
 
 
+def render(d, t, live=False, qa=None):
+    """HTML for a scored day. live=True: the page talks to server.py (/api/ask, /api/label)."""
+    from hunts import HUNTS
+    d["touched_total"] = len({t["ip"] for c in d.get("cases", []) for t in c.get("touched_hosts", [])})
+    if not d.get("day"):
+        day = d["cases"][0]["findings"][0]["first_ts"] if d["cases"] and d["cases"][0]["findings"] else 0
+        d["day"] = dt.datetime.fromtimestamp(day, dt.timezone.utc).strftime("%Y-%m-%d") if day else ""
+    for c in t.values():
+        c.pop("zeek_rows", None)
+    j = lambda o: json.dumps(o, default=float).replace("</", "<\\/")
+    return (HTML.replace("__HUNTS__", j(HUNTS)).replace("__DATA__", j(d)).replace("__TRIAGE__", j(t))
+            .replace("__LIVE__", "true" if live else "false").replace("__QA__", j(qa or {})))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cases", default="out/cases.json")
     ap.add_argument("--triage", default="out/triage.json")
     ap.add_argument("--out", default="out/dashboard.html")
     ap.add_argument("--png", default=None)
+    ap.add_argument("--qa", default=None, help="results/metrics.json: show its answers in the static page")
     a = ap.parse_args()
     d = json.load(open(a.cases))
     t = json.load(open(a.triage))
-    day = d["cases"][0]["findings"][0]["first_ts"] if d["cases"] and d["cases"][0]["findings"] else 0
-    d["day"] = dt.datetime.fromtimestamp(day, dt.timezone.utc).strftime("%Y-%m-%d") if day else ""
-    for c in t.values():
-        c.pop("zeek_rows", None)
-    from hunts import HUNTS
-    html = HTML.replace("__HUNTS__", json.dumps(HUNTS)).replace("__DATA__", json.dumps(d, default=float)).replace("__TRIAGE__", json.dumps(t))
-    open(a.out, "w").write(html)
+    qa = {}
+    if a.qa:
+        for q in json.load(open(a.qa))["qa"]:
+            r = q["llm"] or q["template"]
+            qa[q["question"]] = {"answer": r["answer"], "model": r["model"], "judge": r["judge"], "latency_s": r.get("latency_s")}
+    open(a.out, "w").write(render(d, t, qa=qa))
     print("dashboard ->", a.out)
     if a.png:
         from playwright.sync_api import sync_playwright

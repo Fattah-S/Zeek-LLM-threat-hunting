@@ -1,8 +1,11 @@
 __pycache__/
 *.pyc
-data/
-out/
-out_*/
-feedback/
 *.joblib
+*.db
+synthetic/data/
+synthetic/out/
+synthetic/out_v1/
+synthetic/feedback/
+pipeline/out/
+pipeline/data/
 .env

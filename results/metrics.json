@@ -1,0 +1,270 @@
+{
+  "day": "/logs/attack-day",
+  "generated": "2026-11-26 14:30 UTC",
+  "detection": {
+    "techniques_detected": 8,
+    "techniques_total": 10,
+    "per_technique": [
+      {
+        "technique": "C2 beaconing",
+        "hunt": "C2-01",
+        "detected": true,
+        "evidence": "38 connections to cdn-update-check.online (10.77.0.250) every ~8s, timing 0.88, payload size 1.00, active 100% of the day (beacon score 0.96)"
+      },
+      {
+        "technique": "Long-lived C2 tunnel",
+        "hunt": "C2-02",
+        "detected": true,
+        "evidence": "0.1h connection to 10.77.0.250:8443, only 0.0 MB out / 0.0 MB in (interactive, not a download)"
+      },
+      {
+        "technique": "DGA lookups",
+        "hunt": "C2-03",
+        "detected": true,
+        "evidence": "56 distinct random-looking names that did not resolve, e.g. aeurnuyjjnzg.info, aiglrudtfljvcuvf.info, akqteqtrfbgllt.info (domain generation algorithm)"
+      },
+      {
+        "technique": "Internal port sweep",
+        "hunt": "LM-08",
+        "detected": true,
+        "evidence": "66 connections to 9 internal hosts on ports [135, 445, 3389], 58% failed"
+      },
+      {
+        "technique": "Kerberoasting",
+        "hunt": "LM-06",
+        "detected": true,
+        "evidence": "6 RC4 service tickets in 0.2 min, e.g. MSSQLSvc/sql.corp.lab:1433, MSSQLSvc/web.corp.lab:1433, MSSQLSvc/backup.corp.lab:1433"
+      },
+      {
+        "technique": "PsExec-style remote service",
+        "hunt": "LM-01",
+        "detected": true,
+        "evidence": "mapped \\\\10.77.0.102\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)"
+      },
+      {
+        "technique": "DCSync",
+        "hunt": "LM-07",
+        "detected": true,
+        "evidence": "drsuapi replication calls (DRSBind, DRSCrackNames) from a host that is not a domain controller (only domain controllers replicate the directory: DCSync)"
+      },
+      {
+        "technique": "Pass-the-hash NTLM fan-out",
+        "hunt": "LM-05",
+        "detected": true,
+        "evidence": "NTLM logons as 'adm_it' to 6 hosts in 2 min (this host normally uses Kerberos)"
+      },
+      {
+        "technique": "WMI remote exec attempt",
+        "hunt": "LM-02",
+        "detected": false,
+        "evidence": "no network evidence (the RPC was refused before Zeek could log it)"
+      },
+      {
+        "technique": "Remote scheduled task attempt",
+        "hunt": "LM-03",
+        "detected": false,
+        "evidence": "no network evidence (the RPC was refused before Zeek could log it)"
+      }
+    ],
+    "findings_total_unsuppressed": 10,
+    "findings_true": 10,
+    "finding_precision": 1.0,
+    "host_alerts": [
+      "WS-04"
+    ],
+    "host_precision": 1.0,
+    "host_recall": 1.0,
+    "compromised_case_rank": 1,
+    "suppressed_known_admin": 6,
+    "gold_hosts": [
+      "DC01",
+      "FS01",
+      "WS-02",
+      "WS-04"
+    ],
+    "gold_techniques": [
+      "beaconing",
+      "c2_tunnel",
+      "dcsync",
+      "dga",
+      "kerberoasting",
+      "pass_the_hash",
+      "psexec",
+      "sweep"
+    ]
+  },
+  "llm_model": "not available in this environment (run `docker compose up` locally, where Ollama is reachable)",
+  "judge_model": "requires local Ollama",
+  "llm_available": false,
+  "reference_answer": "WS-04 is compromised. It talks to a command-and-control server (cdn-update-check.online, 10.77.0.250). Observed today: C2 beaconing from WS-04 to cdn-update-check.online; Long-lived C2 tunnel from WS-04 to 10.77.0.250:8443; DGA lookups from WS-04 to 60 random .info domains; Internal port sweep from WS-04 to 10.77.0.1-127; Kerberoasting from WS-04 to 6 service accounts; PsExec-style remote service from WS-04 to WS-02; PsExec-style remote service from WS-04 to FS01; DCSync from WS-04 to DC01; Pass-the-hash NTLM fan-out from WS-04 to 6 hosts; WMI remote exec attempt from WS-04 to DC01; Remote scheduled task attempt from WS-04 to FS01. Investigate WS-04 first, then the hosts it reached. Isolate the host, reset the stolen admin account and krbtgt, rotate the service account passwords, block the C2 domain.",
+  "qa": [
+    {
+      "question": "What abnormal behaviour happened on the network today?",
+      "llm": null,
+      "template": {
+        "model": "template (no LLM)",
+        "answer": "7 hosts scored, 16 hunt hits (6 suppressed as known admin behaviour).\n[HUNT-001] critical WS-04: Beaconing (regular timing + same-size payloads) (T1071.001) WS-04 -> cdn-update-check.online; New domain + TLS client fingerprint (JA3) never seen (T1071.001) WS-04 -> cdn-update-check.online; Internal sweep of SMB/RPC/RDP ports (T1046) WS-04 -> 9 hosts; Long-lived external connection (T1572) WS-04 -> c2; DGA: burst of random-looking failed lookups (T1568.002) WS-04 -> 56 domains; Kerberoasting (RC4 service tickets for many SPNs) (T1558.003) WS-04 -> DC (KDC). Why: longest external connection (h) = 0.07 (this host usually 0.00); failed DNS names = 3 (this host usually 2).\n[HUNT-002] medium WS-01: ML anomaly only. Why: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00).",
+        "judge": {
+          "verdict": "n/a",
+          "reason": "judge model gemma3:4b not available"
+        },
+        "metrics": {
+          "hosts": {
+            "precision": 0.333,
+            "recall": 0.25,
+            "f1": 0.286,
+            "predicted": [
+              "WS-01",
+              "WS-04",
+              "c2"
+            ],
+            "expected": [
+              "DC01",
+              "FS01",
+              "WS-02",
+              "WS-04"
+            ]
+          },
+          "techniques": {
+            "precision": 0.833,
+            "recall": 0.625,
+            "f1": 0.714,
+            "predicted": [
+              "beaconing",
+              "c2_tunnel",
+              "dga",
+              "kerberoasting",
+              "rdp",
+              "sweep"
+            ],
+            "expected": [
+              "beaconing",
+              "c2_tunnel",
+              "dcsync",
+              "dga",
+              "kerberoasting",
+              "pass_the_hash",
+              "psexec",
+              "sweep"
+            ]
+          },
+          "semantic_similarity": 0.321,
+          "similarity_method": "TF-IDF cosine (no embedding model)",
+          "rouge_l": 0.181
+        }
+      }
+    },
+    {
+      "question": "Which hosts should I investigate first, and why did the model flag them?",
+      "llm": null,
+      "template": {
+        "model": "template (no LLM)",
+        "answer": "7 hosts scored, 16 hunt hits (6 suppressed as known admin behaviour).\n[HUNT-001] critical WS-04: Beaconing (regular timing + same-size payloads) (T1071.001) WS-04 -> cdn-update-check.online; New domain + TLS client fingerprint (JA3) never seen (T1071.001) WS-04 -> cdn-update-check.online; Internal sweep of SMB/RPC/RDP ports (T1046) WS-04 -> 9 hosts; Long-lived external connection (T1572) WS-04 -> c2; DGA: burst of random-looking failed lookups (T1568.002) WS-04 -> 56 domains; Kerberoasting (RC4 service tickets for many SPNs) (T1558.003) WS-04 -> DC (KDC). Why: longest external connection (h) = 0.07 (this host usually 0.00); failed DNS names = 3 (this host usually 2).\n[HUNT-002] medium WS-01: ML anomaly only. Why: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00).",
+        "judge": {
+          "verdict": "n/a",
+          "reason": "judge model gemma3:4b not available"
+        },
+        "metrics": {
+          "hosts": {
+            "precision": 0.333,
+            "recall": 0.25,
+            "f1": 0.286,
+            "predicted": [
+              "WS-01",
+              "WS-04",
+              "c2"
+            ],
+            "expected": [
+              "DC01",
+              "FS01",
+              "WS-02",
+              "WS-04"
+            ]
+          },
+          "techniques": {
+            "precision": 0.833,
+            "recall": 0.625,
+            "f1": 0.714,
+            "predicted": [
+              "beaconing",
+              "c2_tunnel",
+              "dga",
+              "kerberoasting",
+              "rdp",
+              "sweep"
+            ],
+            "expected": [
+              "beaconing",
+              "c2_tunnel",
+              "dcsync",
+              "dga",
+              "kerberoasting",
+              "pass_the_hash",
+              "psexec",
+              "sweep"
+            ]
+          },
+          "semantic_similarity": 0.321,
+          "similarity_method": "TF-IDF cosine (no embedding model)",
+          "rouge_l": 0.181
+        }
+      }
+    },
+    {
+      "question": "Is there any sign of credential theft or lateral movement?",
+      "llm": null,
+      "template": {
+        "model": "template (no LLM)",
+        "answer": "7 hosts scored, 16 hunt hits (6 suppressed as known admin behaviour).\n[HUNT-001] critical WS-04: Beaconing (regular timing + same-size payloads) (T1071.001) WS-04 -> cdn-update-check.online; New domain + TLS client fingerprint (JA3) never seen (T1071.001) WS-04 -> cdn-update-check.online; Internal sweep of SMB/RPC/RDP ports (T1046) WS-04 -> 9 hosts; Long-lived external connection (T1572) WS-04 -> c2; DGA: burst of random-looking failed lookups (T1568.002) WS-04 -> 56 domains; Kerberoasting (RC4 service tickets for many SPNs) (T1558.003) WS-04 -> DC (KDC). Why: longest external connection (h) = 0.07 (this host usually 0.00); failed DNS names = 3 (this host usually 2).\n[HUNT-002] medium WS-01: ML anomaly only. Why: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00).",
+        "judge": {
+          "verdict": "n/a",
+          "reason": "judge model gemma3:4b not available"
+        },
+        "metrics": {
+          "hosts": {
+            "precision": 0.333,
+            "recall": 0.25,
+            "f1": 0.286,
+            "predicted": [
+              "WS-01",
+              "WS-04",
+              "c2"
+            ],
+            "expected": [
+              "DC01",
+              "FS01",
+              "WS-02",
+              "WS-04"
+            ]
+          },
+          "techniques": {
+            "precision": 0.833,
+            "recall": 0.625,
+            "f1": 0.714,
+            "predicted": [
+              "beaconing",
+              "c2_tunnel",
+              "dga",
+              "kerberoasting",
+              "rdp",
+              "sweep"
+            ],
+            "expected": [
+              "beaconing",
+              "c2_tunnel",
+              "dcsync",
+              "dga",
+              "kerberoasting",
+              "pass_the_hash",
+              "psexec",
+              "sweep"
+            ]
+          },
+          "semantic_similarity": 0.321,
+          "similarity_method": "TF-IDF cosine (no embedding model)",
+          "rouge_l": 0.181
+        }
+      }
+    }
+  ]
+}

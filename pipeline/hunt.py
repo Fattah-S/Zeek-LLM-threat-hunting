@@ -18,22 +18,25 @@ import pandas as pd
 import shap
 from sklearn.ensemble import IsolationForest
 
-from generate_lab import HOSTS
-from hunts import FEATURE_TEXT, FEATURES, LM_FEATURES, HuntEngine, load_day
+from hunts import FEATURE_TEXT, FEATURES, LM_FEATURES, HuntEngine, load_day, workstation
 
-IP2NAME = {v: k for k, v in HOSTS.items()}   # GUESS: in production this comes from DHCP / CMDB
+# ip -> {"name": ..., "role": ...}. In production this comes from DHCP / DNS / the CMDB.
+HOSTINFO = {}
+
+
+def load_hostnames(path):
+    global HOSTINFO
+    if path and os.path.exists(path):
+        HOSTINFO = json.load(open(path))
 EXEC_HUNTS = {"LM-01", "LM-02", "LM-03", "LM-04"}  # code or a session actually moved to the target
 
 
 def name(ip):
-    return IP2NAME.get(ip, ip)
+    return HOSTINFO.get(ip, {}).get("name", ip)
 
 
 def role(ip):
-    n = name(ip)
-    return {"DC01": "domain controller", "DC02": "domain controller", "FS01": "file server",
-            "SQL01": "database server", "WEB01": "web server", "JUMP01": "admin jump host",
-            "SCCM01": "software deployment"}.get(n, "IT admin workstation" if n == "WS-ADM" else "workstation")
+    return HOSTINFO.get(ip, {}).get("role", "workstation" if workstation(ip) else "host")
 
 
 def transform(df):
@@ -48,7 +51,9 @@ def self_delta(df, host_med):
     """UEBA style: compare each host with its OWN baseline, not with every other host.
     A server that always talks to 15 hosts is normal; a workstation that suddenly does is not."""
     X = transform(df)
-    ref = transform(host_med.reindex(df.host).fillna(0).reset_index(drop=True))
+    # a host with no history of its own is compared with the typical host (peer baseline)
+    peer = host_med.median()
+    ref = transform(host_med.reindex(df.host).fillna(peer).reset_index(drop=True))
     # one-sided: for hunting only "more than usual" matters (a quiet day is not suspicious)
     return (X.reset_index(drop=True) - ref).clip(lower=0).set_axis(X.index)
 
@@ -74,7 +79,8 @@ def shap_reasons(explainer, X, raw, base_med, sign=-1, k=5):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--baseline", default="data/baseline")
+    ap.add_argument("--baseline", default="data/baseline", help="folder of day*/ folders, or a glob like '/logs/baseline-*'")
+    ap.add_argument("--hosts", default=os.environ.get("NSM_HOSTNAMES"), help="hostnames.json (ip -> name, role)")
     ap.add_argument("--day", default="data/hunt")
     ap.add_argument("--out", default="out")
     ap.add_argument("--xgb", default=None, help="XGBoost model from train_feedback.py (ranks with analyst feedback)")
@@ -82,8 +88,10 @@ def main():
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
 
-    print("learning normal from baseline ...")
-    days = [load_day(d) for d in sorted(glob.glob(os.path.join(a.baseline, "day*")))]
+    load_hostnames(a.hosts or os.path.join(os.path.dirname(a.baseline.rstrip("/*")), "hosts.json"))
+    dirs = sorted(glob.glob(os.path.join(a.baseline, "day*"))) or sorted(d for d in glob.glob(a.baseline) if os.path.isdir(d))
+    print(f"learning normal from {len(dirs)} baseline days ...")
+    days = [load_day(d) for d in dirs]
     eng = HuntEngine().fit(days)
     per_day = [eng.run(d)[0] for d in days]
     base = pd.concat(per_day, ignore_index=True)

@@ -8,21 +8,35 @@ Two outputs per day of logs:
 Every hunt is a hypothesis an analyst would test by hand; the code just runs all of them
 every day. See README.md for why each one works.
 """
+import ipaddress
 import json
 import math
 import os
+from functools import lru_cache
 from collections import Counter, defaultdict
 
 import numpy as np
 import pandas as pd
 
-DCS = {"10.10.0.10", "10.10.0.11"}          # GUESS: list your domain controllers
+# ---- network config (env vars; defaults fit the synthetic data) ----------------------------
+def _cidrs(v):
+    return [ipaddress.ip_network(c.strip()) for c in v.split(",") if c.strip()]
+
+
+INTERNAL_NETS = _cidrs(os.environ.get("NSM_INTERNAL_CIDRS", "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"))
+WORKSTATION_NETS = _cidrs(os.environ.get("NSM_WORKSTATION_CIDRS", "10.10.1.0/24"))
+DCS = set(os.environ.get("NSM_DCS", "10.10.0.10,10.10.0.11").split(","))
+# DNS resolvers (forwarders re-ask upstream, so they mirror every client's lookups): don't blame them
+RESOLVERS = set(os.environ.get("NSM_RESOLVERS", os.environ.get("NSM_DCS", "10.10.0.10,10.10.0.11")).split(","))
+SWEEP_MIN_HOSTS = int(os.environ.get("NSM_SWEEP_MIN_HOSTS", 20))
+DGA_RANDOMNESS = float(os.environ.get("NSM_DGA_RANDOMNESS", 3.8))  # per-name bigram "surprise": ~3 for words, 4+ random
+LONG_CONN_SECONDS = float(os.environ.get("NSM_LONG_CONN_SECONDS", 4 * 3600))
 ADMIN_PORTS = {135, 139, 445, 3389, 5985, 5986}
 WORK_HOURS = (7, 20)                          # GUESS: local working hours (logs are UTC here)
 EXEC_EXT = (".exe", ".dll", ".bat", ".ps1", ".vbs", ".scr", ".sys")
 WMI_ENDPOINTS = {"IRemoteSCMActivator", "ISystemActivator", "IWbemServices", "IWbemLevel1Login"}
 TASK_ENDPOINTS = {"ITaskSchedulerService", "atsvc"}
-KNOWN_DAYS = 3   # a (source, hunt) pair seen on >= 3 baseline days is "known admin behaviour"
+KNOWN_SHARE = 0.6  # a (source, hunt) pair seen on >= 60% of baseline days is "known admin behaviour"
 
 HUNTS = {
     # id: (name, tactic, ATT&CK, base severity 0-100)
@@ -75,7 +89,15 @@ def read_log(day_dir, name):
     if not os.path.exists(p):
         return pd.DataFrame()
     rows = [json.loads(l) for l in open(p) if l.strip() and not l.startswith("#")]
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    for c in ["path", "name", "action", "endpoint", "operation", "cipher", "request_type", "service", "username",
+              "rcode_name", "query", "server_name", "cookie", "conn_state", "client"]:
+        if c in df:
+            df[c] = df[c].fillna("").astype(str)
+    for c in ["duration", "orig_bytes", "resp_bytes"]:
+        if c in df:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+    return df
 
 
 def load_day(day_dir):
@@ -83,20 +105,34 @@ def load_day(day_dir):
     return {n: read_log(day_dir, n) for n in names}
 
 
+@lru_cache(maxsize=100_000)
+def _in(ip, nets):
+    try:
+        a = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return any(a in n for n in nets)
+
+
 def internal(ip):
-    return isinstance(ip, str) and (ip.startswith("10.") or ip.startswith("192.168.") or ip.startswith("172.16."))
+    return isinstance(ip, str) and _in(ip, tuple(INTERNAL_NETS))
+
+
+def workstation(ip):
+    return isinstance(ip, str) and _in(ip, tuple(WORKSTATION_NETS))
 
 
 def hour_of(ts):
     return (np.asarray(ts, dtype=float) % 86400) / 3600
 
 
-def beacon_score(ts, ob):
+def beacon_score(ts, ob, window=None):
     """RITA-style. Each part is 0..1 and robust to jitter:
        timing    1 - MAD/median of gaps  (20% jitter still scores ~0.9; human browsing ~0.1)
        skew      1 - Bowley skew of gaps (beacons have symmetric gaps)
        size      1 - MAD/median of bytes sent (same command poll every time)
-       coverage  share of the 24 hours with traffic (malware doesn't go home at 6pm)"""
+       coverage  share of the observation window with traffic, in 24 equal slices
+                 (malware doesn't go home at 6pm; on a 24h window a slice is one hour)"""
     ts = np.sort(np.asarray(ts, dtype=float))
     if len(ts) < 20:
         return 0.0, {}
@@ -109,7 +145,8 @@ def beacon_score(ts, ob):
     ob = np.asarray(ob, dtype=float)
     mob = np.median(ob)
     size = max(0.0, 1 - np.median(np.abs(ob - mob)) / mob) if mob > 0 else 0.0
-    coverage = len(set(hour_of(ts).astype(int))) / 24
+    t0, t1 = window if window else (ts[0] // 86400 * 86400, ts[0] // 86400 * 86400 + 86400)
+    coverage = len(set(np.clip(((ts - t0) / max(t1 - t0, 1) * 24).astype(int), 0, 23))) / 24
     parts = {"timing": timing, "skew": skew, "size": size, "coverage": coverage, "interval_s": float(med)}
     return float(np.mean([timing, skew, size, coverage])), parts
 
@@ -129,7 +166,8 @@ class HuntEngine:
             ok = dns[dns.rcode_name == "NOERROR"]
             self.known_domains |= set(ok["query"])
             labels += [label_of(q) for q in ok["query"].unique()]
-            self.known_ja3 |= set(ssl["ja3"].dropna())
+            if "ja3" in ssl:
+                self.known_ja3 |= set(ssl["ja3"].dropna())
             c = conn[conn["id.orig_h"].map(internal) & conn["id.resp_h"].map(internal) & (conn.conn_state == "SF")]
             for s, d, p in c[["id.orig_h", "id.resp_h", "id.resp_p"]].drop_duplicates().itertuples(index=False):
                 self.known_pairs[s].add((d, p))
@@ -138,6 +176,7 @@ class HuntEngine:
             _, findings, _ = self.run(logs, suppress=False)
             for key in {(f["src"], f["hunt"]) for f in findings}:
                 self.known_hunts[key] += 1
+        self.n_days = len(days)
         return self
 
     # ---- run all hunts on one day ------------------------------------------------------
@@ -165,7 +204,7 @@ class HuntEngine:
             F[h]["new_internal_pairs"] = len(new)
             F[h]["failed_internal_ratio"] = float((adm.conn_state != "SF").mean()) if len(adm) else 0
             # LM-08 sweep: many internal targets on admin ports, mostly failing
-            if F[h]["internal_fanout"] >= 20 and F[h]["failed_internal_ratio"] >= 0.5:
+            if F[h]["internal_fanout"] >= SWEEP_MIN_HOSTS and F[h]["failed_internal_ratio"] >= 0.5:
                 hit("LM-08", h, f"{F[h]['internal_fanout']:.0f} hosts", adm.uid,
                     f"{len(adm)} connections to {F[h]['internal_fanout']:.0f} internal hosts on ports "
                     f"{sorted(adm['id.resp_p'].unique().tolist())}, {F[h]['failed_internal_ratio']:.0%} failed",
@@ -176,16 +215,18 @@ class HuntEngine:
         adm_share = smbm[smbm.path.str.upper().str.endswith(("\\ADMIN$", "\\C$"))] if len(smbm) else smbm
         writes = smbf[(smbf.action == "SMB::FILE_WRITE") & smbf.path.str.upper().str.endswith(("\\ADMIN$", "\\C$"))
                       & smbf.name.str.lower().str.endswith(EXEC_EXT)] if len(smbf) else smbf
-        svc = rpc[(rpc.endpoint == "svcctl") & rpc.operation.str.startswith(("CreateService", "StartService"))] if len(rpc) else rpc
+        svc = rpc[(rpc.endpoint == "svcctl")] if len(rpc) else rpc  # OpenSCManager/Create/Start: remote service control
         for (s, d), g in adm_share.groupby(["id.orig_h", "id.resp_h"]):
             F[s]["admin_share_maps"] += 1
             w = writes[(writes["id.orig_h"] == s) & (writes["id.resp_h"] == d)]
             v = svc[(svc["id.orig_h"] == s) & (svc["id.resp_h"] == d)]
             F[s]["exec_written_to_share"] += int(len(w) > 0)
             F[s]["remote_service_created"] += int(len(v) > 0)
-            if len(w) and len(v):
+            if len(v):  # admin share + service control to the same host (PsExec / smbexec / deployment tools)
+                drop = f"dropped {w.name.iloc[0]}, " if len(w) else ""
                 hit("LM-01", s, d, list(g.uid) + list(w.uid) + list(v.uid),
-                    f"mapped {g.path.iloc[0]}, wrote {w.name.iloc[0]}, then svcctl {', '.join(v.operation.unique())}",
+                    f"mapped {g.path.iloc[0]}, {drop}svcctl ({', '.join(sorted(v.operation.unique()))}) "
+                    "- remote service control over the admin share (PsExec pattern)",
                     len(g) + len(w) + len(v), pd.concat([g.ts, w.ts, v.ts]))
         if len(rpc):
             # LM-02 WMI / DCOM
@@ -198,15 +239,24 @@ class HuntEngine:
             for (s, d), g in task.groupby(["id.orig_h", "id.resp_h"]):
                 F[s]["remote_task"] += 1
                 hit("LM-03", s, d, g.uid, f"{g.endpoint.iloc[0]}::{', '.join(g.operation.unique())}", len(g), g.ts)
-            # LM-07 DCSync
-            drs = rpc[(rpc.endpoint == "drsuapi") & (rpc.operation == "DRSGetNCChanges") & ~rpc["id.orig_h"].isin(DCS)]
+            # LM-07 DCSync: AD replication from a host that is not a domain controller.
+            # Only DCs replicate the directory. The signature is DRSGetNCChanges; the DRSBind +
+            # DRSCrackNames that lead up to it are logged too, so an attempt is caught even if the
+            # final pull is refused (e.g. Mimikatz run as a non-privileged user, or blocked at the DC).
+            REPL_OPS = {"DRSGetNCChanges", "DRSCrackNames", "DRSBind"}
+            drs = rpc[(rpc.endpoint == "drsuapi") & rpc.operation.isin(REPL_OPS) & ~rpc["id.orig_h"].isin(DCS)]
             for (s, d), g in drs.groupby(["id.orig_h", "id.resp_h"]):
-                F[s]["dcsync_calls"] += len(g)
-                hit("LM-07", s, d, g.uid, f"{len(g)} x drsuapi::DRSGetNCChanges from a host that is not a domain controller", len(g), g.ts)
+                ops = g.operation.value_counts().to_dict()
+                pull = int(ops.get("DRSGetNCChanges", 0))
+                F[s]["dcsync_calls"] += pull or len(g)
+                verb = (f"{pull} x drsuapi::DRSGetNCChanges" if pull else
+                        f"drsuapi replication calls ({', '.join(sorted(ops))})")
+                hit("LM-07", s, d, g.uid, f"{verb} from a host that is not a domain controller "
+                    "(only domain controllers replicate the directory: DCSync)", len(g), g.ts)
 
         # LM-04 RDP
         rdp = logs["rdp"]
-        ws = lambda ip: ip.startswith("10.10.1.")  # GUESS: workstation subnet
+        ws = workstation
         for s, g in (rdp.groupby("id.orig_h") if len(rdp) else []):
             hrs = hour_of(g.ts)
             off = (hrs < WORK_HOURS[0]) | (hrs >= WORK_HOURS[1])
@@ -247,18 +297,24 @@ class HuntEngine:
 
         # ---- C2 ------------------------------------------------------------------------
         ext = conn[conn["id.orig_h"].map(internal) & ~conn["id.resp_h"].map(internal)]
+        ext = ext[ext["id.resp_p"] != 53]
+        span = (float(conn.ts.min()), float(conn.ts.max()))
+        window = span if span[1] - span[0] < 20 * 3600 else None  # lab sessions are minutes long
         sni = dict(zip(ssl.uid, ssl.server_name)) if len(ssl) else {}
-        ja3 = dict(zip(ssl.uid, ssl.ja3)) if len(ssl) else {}
-        for (s, d), g in ext.groupby(["id.orig_h", "id.resp_h"]):
-            dom = next((sni[u] for u in g.uid if u in sni), d)
-            score, parts = beacon_score(g.ts, g.orig_bytes)
+        ja3 = dict(zip(ssl.uid, ssl.ja3)) if len(ssl) and "ja3" in ssl else {}
+        # group by the destination SERVICE (TLS server name if known, else IP). Many sites behind one
+        # IP (CDN, or a lab where every site shares an address) must not merge into one fake beacon.
+        ext = ext.assign(dest=[sni.get(u) or d for u, d in zip(ext.uid, ext["id.resp_h"])])
+        for (s, dom), g in ext.groupby(["id.orig_h", "dest"]):
+            d = g["id.resp_h"].iloc[0]
+            score, parts = beacon_score(g.ts, g.orig_bytes, window)
             if score > F[s]["max_beacon_score"]:
                 F[s]["max_beacon_score"] = score
             if score >= 0.8:
                 hit("C2-01", s, dom, g.uid, f"{len(g)} connections to {dom} ({d}) every ~{parts['interval_s']:.0f}s, "
                     f"timing {parts['timing']:.2f}, payload size {parts['size']:.2f}, active {parts['coverage']:.0%} of the day "
                     f"(beacon score {score:.2f})", len(g), g.ts, extra=int((score - 0.8) * 100))
-            long = g[g.duration >= 4 * 3600]
+            long = g[g.duration >= LONG_CONN_SECONDS]
             F[s]["max_ext_duration_h"] = max(F[s]["max_ext_duration_h"], g.duration.max() / 3600)
             if len(long):
                 r = long.iloc[0]
@@ -266,20 +322,26 @@ class HuntEngine:
                     f"only {r.orig_bytes / 1e6:.1f} MB out / {r.resp_bytes / 1e6:.1f} MB in (interactive, not a download)",
                     len(long), long.ts)
             new_ja3 = {ja3[u] for u in g.uid if u in ja3} - self.known_ja3
-            if dom not in self.known_domains and new_ja3 and dom != d:
+            if dom not in self.known_domains and dom != d and (new_ja3 or not ja3):
                 F[s]["new_domain_new_ja3"] += 1
-                hit("C2-04", s, dom, g.uid, f"first time anyone here reached {dom}, with JA3 {next(iter(new_ja3))} "
-                    f"that no host used during the baseline", len(g), g.ts)
+                why = (f"with JA3 {next(iter(new_ja3))} that no host used during the baseline" if new_ja3
+                       else "(no JA3 in this sensor's ssl.log, so domain novelty only)")
+                hit("C2-04", s, dom, g.uid, f"first time anyone here reached {dom}, {why}", len(g), g.ts)
         if len(dns):
-            nx = dns[dns.rcode_name == "NXDOMAIN"]
-            for s, g in nx.groupby("id.orig_h"):
-                names = g["query"].unique()
-                rand = float(np.mean([self.bigram.score(label_of(q)) for q in names]))
-                F[s]["nxdomain_names"] = len(names)
-                F[s]["nx_randomness"] = rand
-                if len(names) >= 30 and rand >= 4.0:
-                    hit("C2-03", s, f"{len(names)} domains", g.uid, f"{len(names)} distinct failed lookups, "
-                        f"randomness {rand:.1f} (normal names ~3), e.g. {', '.join(names[:3])}", len(g), g.ts)
+            dns = dns[~dns["id.orig_h"].isin(RESOLVERS)]   # forwarders mirror clients; skip them
+            # DGA = one host asking for many random-looking names. Keyed on the NAMES (robust to how
+            # the resolver reports the failure), restricted to names that did not resolve (NXDOMAIN,
+            # or an empty answer), which is what a DGA's dead rendezvous domains look like.
+            failed = dns[(dns.rcode_name == "NXDOMAIN") | (dns["answers"].map(lambda a: not a if isinstance(a, list) else True))]
+            for s, g in failed.groupby("id.orig_h"):
+                rand_names = sorted({q for q in g["query"].unique() if self.bigram.score(label_of(q)) >= DGA_RANDOMNESS})
+                nx = g[g.rcode_name == "NXDOMAIN"]
+                F[s]["nxdomain_names"] = nx["query"].nunique()
+                F[s]["nx_randomness"] = float(np.mean([self.bigram.score(label_of(q)) for q in nx["query"].unique()])) if len(nx) else 0.0
+                if len(rand_names) >= 30:
+                    uids = g[g["query"].isin(rand_names)].uid
+                    hit("C2-03", s, f"{len(rand_names)} domains", uids, f"{len(rand_names)} distinct random-looking names "
+                        f"that did not resolve, e.g. {', '.join(rand_names[:3])} (domain generation algorithm)", len(uids), g.ts)
             for s in hosts:
                 F[s]["new_domains"] = 0
             ok = dns[dns.rcode_name == "NOERROR"]
@@ -291,7 +353,7 @@ class HuntEngine:
         if suppress:
             for f in findings:
                 days = self.known_hunts[(f["src"], f["hunt"])]
-                f["suppressed"] = days >= KNOWN_DAYS
+                f["suppressed"] = self.n_days > 0 and days >= max(1, math.ceil(KNOWN_SHARE * self.n_days))
                 f["suppressed_reason"] = f"{f['src']} did this on {days} of the baseline days (known admin behaviour)" if f["suppressed"] else ""
         feats = pd.DataFrame([{**{k: 0.0 for k in FEATURES}, **F[h], "host": h} for h in hosts])
         edges = []

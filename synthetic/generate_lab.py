@@ -293,6 +293,10 @@ def main():
         w.writerow(["host", "tactic", "technique"])
         for row in sorted(set((ip2name[s], t, q) for s, t, q in g.truth)):
             w.writerow(row)
+    roles = {"DC01": "domain controller", "DC02": "domain controller", "FS01": "file server", "SQL01": "database server",
+             "WEB01": "web server", "JUMP01": "admin jump host", "SCCM01": "software deployment", "WS-ADM": "IT admin workstation"}
+    json.dump({ip: {"name": n, "role": roles.get(n, "workstation")} for n, ip in HOSTS.items()},
+              open(os.path.join(a.out, "hosts.json"), "w"), indent=1)
     print(f"wrote {a.baseline_days} baseline days + {hunt_dir}")
 
 

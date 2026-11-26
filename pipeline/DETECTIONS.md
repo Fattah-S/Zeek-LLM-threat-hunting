@@ -1,4 +1,4 @@
-# NSM Threat Hunting prototype: Lateral Movement + C2 (Zeek → ML → SHAP → open-source LLM)
+> Detection reference for the pipeline: the 12 hunts, the ML model, SHAP, and how a day is scored. The lab that produces the data and the full runnable system are described in the [top-level README](../README.md). The `synthetic/` folder regenerates the same detections on synthetic logs without Docker.
 
 > **الخلاصة:** الـ prototype ده بيعمل threat hunting يومي على Zeek logs. فيه **12 hunt** (8 للـ lateral movement و4 للـ C2)، كل واحد عبارة عن hypothesis بيدوّر على سلوك معروف (PsExec، WMI، RDP غريب، pass-the-hash، Kerberoasting، DCSync، beaconing، DGA…). جنبهم **ML model** بيقارن كل host بنفسه (هو عادةً بيعمل إيه) ويطلع risk score، و**SHAP** بيقول ليه. بعدين بيجمّع الـ hosts اللي بينهم lateral movement في **case واحدة** (attack path)، و**LLM open source** (Qwen3 على **Ollama**، self-hosted) بيكتب triage summary بالـ evidence. الـ analyst بيدوس TP/FP، والـ feedback بيدرّب XGBoost.
 >

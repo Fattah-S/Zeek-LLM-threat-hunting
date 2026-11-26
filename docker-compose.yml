@@ -1,0 +1,109 @@
+# Zeek LLM Threat Hunting lab: one command builds a small Windows-style network, runs clean
+# "days" and one attack "day", captures every packet, and runs the full pipeline:
+#   Zeek sensor -> features -> Isolation Forest -> SHAP -> store -> analyst asks -> LLM answers -> LLM judge
+#
+#   docker compose up --build        then open http://localhost:8080
+#
+x-host: &host
+  build: { context: ./lab, args: { BASE: "${LAB_BASE_IMAGE:-ubuntu:24.04}" } }
+  image: nsm-lab-host:latest
+  volumes: [control:/control, pcap:/pcap]
+  dns: [10.77.0.10]
+  restart: "no"
+
+services:
+  # ---------------- the network being monitored ----------------
+  dc01:
+    <<: *host
+    hostname: dc01
+    environment: { ROLE: dc }
+    networks: { corp: { ipv4_address: 10.77.0.10 } }
+    dns: [127.0.0.1]
+    privileged: true            # samba AD DC needs extended attributes / ACLs
+  fs01:
+    <<: *host
+    hostname: fs01
+    environment: { ROLE: fileserver }
+    networks: { corp: { ipv4_address: 10.77.0.20 } }
+  sccm01:
+    <<: *host
+    hostname: sccm01
+    environment: { ROLE: sccm }
+    networks: { corp: { ipv4_address: 10.77.0.60 } }
+  ws-01:
+    <<: *host
+    hostname: ws-01
+    environment: { ROLE: workstation, LAB_USER: user01 }
+    networks: { corp: { ipv4_address: 10.77.0.101 } }
+  ws-02:
+    <<: *host
+    hostname: ws-02
+    environment: { ROLE: workstation, LAB_USER: user02 }
+    networks: { corp: { ipv4_address: 10.77.0.102 } }
+  ws-03:
+    <<: *host
+    hostname: ws-03
+    environment: { ROLE: workstation, LAB_USER: user03 }
+    networks: { corp: { ipv4_address: 10.77.0.103 } }
+  ws-04:                        # the compromised workstation: normal user traffic + the intrusion
+    <<: *host
+    hostname: ws-04
+    environment: { ROLE: attacker, LAB_USER: user04 }
+    networks: { corp: { ipv4_address: 10.77.0.104 } }
+  ws-05:
+    <<: *host
+    hostname: ws-05
+    environment: { ROLE: workstation, LAB_USER: user05 }
+    networks: { corp: { ipv4_address: 10.77.0.105 } }
+  internet:                     # public DNS + web sites (outside the internal range in config)
+    <<: *host
+    hostname: internet
+    environment: { ROLE: internet }
+    networks: { corp: { ipv4_address: 10.77.0.240 } }
+  c2:                           # attacker's command-and-control server
+    <<: *host
+    hostname: c2
+    environment: { ROLE: c2 }
+    networks: { corp: { ipv4_address: 10.77.0.250 } }
+  orchestrator:                 # runs the clean days, then the attack day
+    <<: *host
+    hostname: orchestrator
+    environment:
+      ROLE: orchestrator
+      BASELINE_SESSIONS: "${BASELINE_SESSIONS:-3}"
+      BASELINE_SECONDS: "${BASELINE_SECONDS:-240}"
+      ATTACK_SECONDS: "${ATTACK_SECONDS:-420}"
+    networks: { corp: { ipv4_address: 10.77.0.5 } }
+
+  # ---------------- the NSM platform ----------------
+  sensor:                       # Zeek: pcap -> JSON logs
+    image: zeek/zeek:7.0
+    entrypoint: ["/sensor/run_sensor.sh"]
+    volumes: [pcap:/pcap, logs:/logs, ./sensor:/sensor:ro]
+    network_mode: none
+  ollama:                       # open-source LLMs, local
+    image: ollama/ollama:0.12.6
+    volumes: [ollama:/root/.ollama]
+    ports: ["11434:11434"]
+  ollama-pull:                  # downloads the models once (cached in the ollama volume)
+    image: ollama/ollama:0.12.6
+    depends_on: [ollama]
+    environment: { OLLAMA_HOST: "ollama:11434" }
+    entrypoint: ["sh", "-c", "sleep 3; for m in $${LLM_MODEL} $${JUDGE_MODEL} $${EMBED_MODEL}; do ollama pull $$m; done"]
+    env_file: [.env.example]
+    restart: "no"
+  pipeline:                     # features -> Isolation Forest -> SHAP -> store -> LLM -> judge -> dashboard
+    build: { context: ./pipeline, args: { BASE: "${PIPELINE_BASE_IMAGE:-python:3.12-slim}" } }
+    image: nsm-pipeline:latest
+    env_file: [.env.example]
+    environment:
+      OLLAMA_URL: http://ollama:11434
+    volumes: [logs:/logs:ro, store:/data]
+    ports: ["8080:8080"]
+    depends_on: [sensor, ollama]
+
+networks:
+  corp:
+    ipam: { config: [{ subnet: 10.77.0.0/24 }] }
+
+volumes: { control: {}, pcap: {}, logs: {}, store: {}, ollama: {} }

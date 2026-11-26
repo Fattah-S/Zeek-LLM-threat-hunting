@@ -1,7 +1,0 @@
-numpy
-pandas
-scikit-learn
-shap
-xgboost
-joblib
-# optional, for the dashboard PNG: pip install playwright && playwright install chromium
