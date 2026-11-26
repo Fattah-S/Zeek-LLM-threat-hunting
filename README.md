@@ -1,15 +1,19 @@
 # Zeek LLM Threat Hunting
 
-**A prototype for building an AI-assisted NSM (Network Security Monitoring) platform.** It watches Zeek network logs, scores every host with machine learning, explains each score with SHAP, and lets an analyst ask in plain language *"what abnormal behaviour happened on the network today?"* — the answer is written by an open-source LLM from the platform's own output, and a second LLM judges it.
+**A prototype for building an AI-assisted NSM (Network Security Monitoring) platform.** It watches Zeek network logs, scores every host with machine learning, explains each score with an explainability layer, and lets an analyst ask in plain language *"what abnormal behaviour happened on the network today?"* — the answer is written by an open-source LLM from the platform's own output, and a second LLM judges it.
+
+![NSM Hunt Console — the analyst dashboard](docs/dashboard.png)
+
+*The Hunt Console: a priority queue of ranked cases on the left, and a tabbed case detail (Overview, Explainability, Timeline, Attack path) on the right. The pipeline strip across the top shows each stage with its live counts; the ribbon under it shows the lab's detection scores.*
 
 The pipeline order is fixed, and the LLM sits at the very end as the translator, never as the detector:
 
 ```
 Zeek sensor → feature extraction → ML model (Isolation Forest, a risk score per host)
-            → SHAP (why the score is high) → store → analyst asks → LLM answers from the store → LLM judge
+            → Explainability (why the score is high) → store → analyst asks → LLM answers from the store → LLM judge
 ```
 
-SHAP explains a model that turns numeric features into a score, so it has to come **before** the LLM: the LLM reads raw logs and is not that kind of model. The Isolation Forest and the hunts decide what is anomalous; SHAP says why; the LLM only translates it for the analyst.
+The explainability layer explains a model that turns numeric features into a score, so it has to come **before** the LLM: the LLM reads raw logs and is not that kind of model. The Isolation Forest and the hunts decide what is anomalous; the explainability layer says why; the LLM only translates it for the analyst.
 
 There are two ways to run it:
 
@@ -28,7 +32,7 @@ cd zeek-llm-threat-hunting
 docker compose up --build
 ```
 
-Open **http://localhost:8080**. Over a few minutes the page fills in as each stage finishes: the network generates traffic, the Zeek sensor turns packets into logs, the pipeline scores the hosts, and the dashboard shows the ranked hunts with their SHAP explanations. Then type a question into **Ask the network**.
+Open **http://localhost:8080**. Over a few minutes the page fills in as each stage finishes: the network generates traffic, the Zeek sensor turns packets into logs, the pipeline scores the hosts, and the dashboard shows the ranked hunts with their plain-language explanations. Then type a question into **Ask the network**.
 
 The open-source LLMs run in a local **Ollama** container, so no log data ever leaves the machine. The models download themselves on first run (about 6 GB); until they are ready, the LLM answer falls back to a template and the dashboard says so.
 
@@ -80,7 +84,7 @@ Each step uses the real protocol, so Zeek sees what it would on a real network. 
 ```
 ┌─ lab (Docker) ────────────┐   ┌─ Zeek ─┐   ┌─ pipeline (one container) ───────────────────────────────┐
 │ AD DC, servers,           │   │ sensor │   │ hunts.py   12 ATT&CK hunts ─────────────┐               │
-│ workstations, C2.         │──►│ pcap → │──►│ hunt.py    features → IsolationForest → SHAP → score    │
+│ workstations, C2.         │──►│ pcap → │──►│ hunt.py    features → IsolationForest → Explainability → score    │
 │ Real Kerberos/SMB/RPC,    │   │ JSON   │   │            group hosts into cases (attack path)         │
 │ real Impacket attack.     │   │ logs   │   │ store.py   SQLite: runs, hosts, findings, Q&A, labels   │
 └───────────────────────────┘   └────────┘   │ triage.py  per-case triage card (Ollama)                │
@@ -93,13 +97,13 @@ Each step uses the real protocol, so Zeek sees what it would on a real network. 
 
 1. **Zeek** turns packets into `conn/dns/ssl/kerberos/ntlm/smb_mapping/smb_files/dce_rpc/rdp` logs.
 2. **Hunts** (`hunts.py`) look for known attacker techniques, each with an ATT&CK id and the Zeek `uid`s that prove it. A `(source, hunt)` pair seen on most baseline days (the deployment server) is suppressed as known admin behaviour.
-3. **ML** (`hunt.py`): per-host features go to an **Isolation Forest** trained on the baseline. Each host is compared with **its own** normal (UEBA style), so a server that always talks to 15 hosts is not flagged for doing so. **SHAP** gives the top reasons in plain words: *"RDP destinations = 2 (this host usually 0)"*.
-4. **Store** (`store.py`): the scored day, the cases, the findings and the SHAP reasons go to SQLite. **The LLM only ever reads from here.**
-5. **Ask the network** (`ask.py`): the analyst's question plus the day's top behaviours go to the LLM in one call. It must cite a finding id or a SHAP reason for every claim, and answer only from the store.
+3. **ML** (`hunt.py`): per-host features go to an **Isolation Forest** trained on the baseline. Each host is compared with **its own** normal (UEBA style), so a server that always talks to 15 hosts is not flagged for doing so. The **explainability layer** gives the top reasons in plain words: *"RDP destinations = 2 (this host usually 0)"*.
+4. **Store** (`store.py`): the scored day, the cases, the findings and the explanation reasons go to SQLite. **The LLM only ever reads from here.**
+5. **Ask the network** (`ask.py`): the analyst's question plus the day's top behaviours go to the LLM in one call. It must cite a finding id or an explanation reason for every claim, and answer only from the store.
 6. **Judge** (`judge.py`): a different open-source model grades the answer for faithfulness, relevance, completeness and actionability, and lists any unsupported claim.
 7. **Feedback**: the analyst presses TP/FP in the dashboard; labels go to the store and train an XGBoost re-ranker (`train_feedback.py`).
 
-The detections, the ML and SHAP are documented in detail in [`pipeline/DETECTIONS.md`](pipeline/DETECTIONS.md).
+The detections, the ML and the explainability layer are documented in detail in [`pipeline/DETECTIONS.md`](pipeline/DETECTIONS.md).
 
 ---
 
@@ -143,7 +147,7 @@ lab/                        the simulated network
 sensor/                     Zeek sensor: merge per-host pcaps, run Zeek, emit JSON logs
   run_sensor.sh  merge_pcaps.py  local.zeek
 pipeline/                   the NSM platform
-  hunts.py hunt.py          12 hunts, Isolation Forest, SHAP, case grouping
+  hunts.py hunt.py          12 hunts, Isolation Forest, explainability, case grouping
   store.py                  SQLite store (the LLM reads only this)
   ask.py llm.py             retrieve from the store, ask the local LLM
   judge.py                  LLM-as-a-judge + algorithmic metrics

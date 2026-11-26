@@ -52,7 +52,7 @@
     "indicators": [
       "390 ports with mostly failed connections: scanning"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "beacon_regularity",
         "description": "timing regularity (1 = clockwork, beacon-like)",
@@ -117,7 +117,7 @@
     "indicators": [
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "max_duration",
         "description": "longest connection duration",
@@ -197,7 +197,7 @@
       "burst of 1002 failed lookups (NXDOMAIN): possible DGA",
       "1002 failed lookups of long names with similar length (25 +/- 3.3 chars, TLD cut off): GameOver-Zeus-style DGA"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "n_unique_queries",
         "description": "distinct DNS names queried",
@@ -272,7 +272,7 @@
       "domain never seen before in this network",
       "regular timing (regularity 0.97): possible C2 beacon"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "beacon_regularity",
         "description": "timing regularity (1 = clockwork, beacon-like)",
@@ -351,7 +351,7 @@
       "random-looking (DGA-like) domain names, score 5.4",
       "burst of 153 failed lookups (NXDOMAIN): possible DGA"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "n_unique_queries",
         "description": "distinct DNS names queried",
@@ -431,7 +431,7 @@
       "many long random subdomains under one domain: possible DNS tunnelling",
       "100% of DNS queries are TXT/NULL/ANY"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "dns_entropy",
         "description": "randomness of DNS subdomains (entropy)",
@@ -499,7 +499,7 @@
       "domain never seen before in this network",
       "random-looking (DGA-like) domain names, score 5.2"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -567,7 +567,7 @@
       "domain never seen before in this network",
       "random-looking (DGA-like) domain names, score 6.2"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -634,7 +634,7 @@
     "indicators": [
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -699,7 +699,7 @@
     "indicators": [
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "n_conn",
         "description": "number of connections",
@@ -775,7 +775,7 @@
       "wpad.corp.local"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -845,7 +845,7 @@
     "indicators": [
       "destination port almost never seen in the baseline"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "max_duration",
         "description": "longest connection duration",
@@ -911,7 +911,7 @@
       "printer-3f.corp.local"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "dns_entropy",
         "description": "randomness of DNS subdomains (entropy)",
@@ -977,7 +977,7 @@
       "githb.com"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -1042,7 +1042,7 @@
       "outlok.office365.com"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -1107,7 +1107,7 @@
       "outlok.office365.com"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -1174,7 +1174,7 @@
     "indicators": [
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -1248,7 +1248,7 @@
       "wpad.corp.local"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -1314,7 +1314,7 @@
       "wpad.corp.local"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -1388,7 +1388,7 @@
       "cousin/lookalike domain of 'microsoft' (similarity 1.00)",
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "domain_randomness",
         "description": "how random the domain name looks (freq.py-style, DGA)",

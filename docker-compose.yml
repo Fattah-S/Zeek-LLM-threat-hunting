@@ -1,6 +1,6 @@
 # Zeek LLM Threat Hunting lab: one command builds a small Windows-style network, runs clean
 # "days" and one attack "day", captures every packet, and runs the full pipeline:
-#   Zeek sensor -> features -> Isolation Forest -> SHAP -> store -> analyst asks -> LLM answers -> LLM judge
+#   Zeek sensor -> features -> Isolation Forest -> explainability -> store -> analyst asks -> LLM answers -> LLM judge
 #
 #   docker compose up --build        then open http://localhost:8080
 #
@@ -92,7 +92,7 @@ services:
     entrypoint: ["sh", "-c", "sleep 3; for m in $${LLM_MODEL} $${JUDGE_MODEL} $${EMBED_MODEL}; do ollama pull $$m; done"]
     env_file: [.env.example]
     restart: "no"
-  pipeline:                     # features -> Isolation Forest -> SHAP -> store -> LLM -> judge -> dashboard
+  pipeline:                     # features -> Isolation Forest -> explainability -> store -> LLM -> judge -> dashboard
     build: { context: ./pipeline, args: { BASE: "${PIPELINE_BASE_IMAGE:-python:3.12-slim}" } }
     image: nsm-pipeline:latest
     env_file: [.env.example]

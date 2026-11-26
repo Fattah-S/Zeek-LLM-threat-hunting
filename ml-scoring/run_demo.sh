@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 python3 generate_synthetic.py --test-day                      # data/baseline (5 days), data/score, data/test
-python3 score.py --score data/score --out out --top 20        # Isolation Forest + SHAP
+python3 score.py --score data/score --out out --top 20        # Isolation Forest + explainability
 python3 evaluate.py --out out --truth data/score/ground_truth.csv
 python3 simulate_feedback.py --out out --top 50               # "analyst" labels top 50 TP/FP
 python3 train_feedback.py --scored out/scored_alerts.csv --baseline out/baseline_alerts.csv

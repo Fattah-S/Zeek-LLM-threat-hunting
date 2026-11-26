@@ -1,6 +1,6 @@
-> Detection reference for the pipeline: the 12 hunts, the ML model, SHAP, and how a day is scored. The lab that produces the data and the full runnable system are described in the [top-level README](../README.md). The `synthetic/` folder regenerates the same detections on synthetic logs without Docker.
+> Detection reference for the pipeline: the 12 hunts, the ML model, the explainability layer, and how a day is scored. The lab that produces the data and the full runnable system are described in the [top-level README](../README.md). The `synthetic/` folder regenerates the same detections on synthetic logs without Docker.
 
-> **الخلاصة:** الـ prototype ده بيعمل threat hunting يومي على Zeek logs. فيه **12 hunt** (8 للـ lateral movement و4 للـ C2)، كل واحد عبارة عن hypothesis بيدوّر على سلوك معروف (PsExec، WMI، RDP غريب، pass-the-hash، Kerberoasting، DCSync، beaconing، DGA…). جنبهم **ML model** بيقارن كل host بنفسه (هو عادةً بيعمل إيه) ويطلع risk score، و**SHAP** بيقول ليه. بعدين بيجمّع الـ hosts اللي بينهم lateral movement في **case واحدة** (attack path)، و**LLM open source** (Qwen3 على **Ollama**، self-hosted) بيكتب triage summary بالـ evidence. الـ analyst بيدوس TP/FP، والـ feedback بيدرّب XGBoost.
+> **الخلاصة:** الـ prototype ده بيعمل threat hunting يومي على Zeek logs. فيه **12 hunt** (8 للـ lateral movement و4 للـ C2)، كل واحد عبارة عن hypothesis بيدوّر على سلوك معروف (PsExec، WMI، RDP غريب، pass-the-hash، Kerberoasting، DCSync، beaconing، DGA…). جنبهم **ML model** بيقارن كل host بنفسه (هو عادةً بيعمل إيه) ويطلع risk score، و**explainability layer** بيقول ليه. بعدين بيجمّع الـ hosts اللي بينهم lateral movement في **case واحدة** (attack path)، و**LLM open source** (Qwen3 على **Ollama**، self-hosted) بيكتب triage summary بالـ evidence. الـ analyst بيدوس TP/FP، والـ feedback بيدرّب XGBoost.
 >
 > على الداتا الـ synthetic: الـ intrusion كلها (11 technique على 3 hosts) طلعت في أول 2 cases، و15 hit من SCCM (شكلها زي PsExec بالظبط) اتشالت أوتوماتيك لأنها بتحصل كل يوم في الـ baseline.
 
@@ -11,7 +11,7 @@ Zeek (conn, dns, ssl, kerberos, ntlm, smb_mapping, smb_files, dce_rpc, rdp)
    │
    ├─► hunts.py  ── 12 hunts (ATT&CK) ─────────────┐   known-bad behaviour
    │                                               ├─► hunt.py: score + group into cases (attack path)
-   └─► hunts.py  ── per-host features ─► Isolation Forest vs the host's OWN baseline ─► SHAP
+   └─► hunts.py  ── per-host features ─► Isolation Forest vs the host's OWN baseline ─► Explainability
                                                    │
                                      out/cases.json ─► triage.py (open-source LLM, 1 call per case)
                                                    │
@@ -25,19 +25,19 @@ Zeek (conn, dns, ssl, kerberos, ntlm, smb_mapping, smb_files, dce_rpc, rdp)
 ```bash
 pip install -r requirements.txt
 bash run_demo.sh          # ~1 min: data, hunt, triage, dashboard, feedback, unseen day
-open out/dashboard.html   # click cases, switch hosts in SHAP, press TP/FP, export labels.csv
+open out/dashboard.html   # click cases, switch hosts in the explanation panel, press TP/FP, export labels.csv
 ```
 
 Run it from a local copy (the shared project folder is a network drive; Python imports from it sometimes fail).
 
 ## Two layers, and why both
 
-| | Hunts (rules) | ML (Isolation Forest + SHAP) |
+| | Hunts (rules) | ML (Isolation Forest + explainability) |
 |---|---|---|
 | Question it answers | "Is this host doing something attackers do?" | "Is this host doing something **it** doesn't normally do?" |
 | Good at | Known techniques, even done once (one DCSync call is enough) | Things nobody wrote a rule for, volume/shape changes |
 | Weak at | New techniques | Things that never vary in the baseline (a DCSync feature that is always 0 gives the forest nothing to split on) |
-| Explanation | The finding itself + ATT&CK id + Zeek uids | SHAP: "RDP destinations = 2 (this host usually 0)" |
+| Explanation | The finding itself + ATT&CK id + Zeek uids | Explainability: "RDP destinations = 2 (this host usually 0)" |
 
 **Score per host** = max(hunt severity, 0.7 × ML risk) + 4 per extra distinct hunt + 8 if ML agrees (≥ 90) with a hunt. ML alone tops out at 70 ("medium: hunting lead"), so the queue is driven by evidence, and ML raises or adds leads.
 
@@ -102,7 +102,7 @@ LLM_URL=http://ollama-host:11434/v1 python3 triage.py
 |---|---|
 | `generate_lab.py` | Synthetic Zeek logs (9 log types, real field names) for a small Windows domain: 5 clean days + an intrusion day. `--variant 1` = same techniques on other hosts (unseen test day). |
 | `hunts.py` | The 12 hunts, per-host features, baseline learning (known domains, JA3s, host pairs, known admin behaviour) |
-| `hunt.py` | Isolation Forest vs own baseline, SHAP, scoring, case grouping, attack path → `out/cases.json` |
+| `hunt.py` | Isolation Forest vs own baseline, explainability, scoring, case grouping, attack path → `out/cases.json` |
 | `triage.py` | LLM triage cards (Ollama by default, any OpenAI-compatible server, or `--offline`) → `out/triage.json` |
 | `build_dashboard.py` | Self-contained `dashboard.html` (+ PNG with `--png` if Python Playwright is installed) |
 | `simulate_feedback.py`, `train_feedback.py` | Analyst labels → XGBoost; `hunt.py --xgb` ranks with it |

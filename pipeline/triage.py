@@ -40,7 +40,7 @@ SCHEMA = {
 }
 
 SYSTEM = """You are a SOC threat-hunting assistant. You get one hunt case built from Zeek logs:
-hunt findings (each with a MITRE ATT&CK id and Zeek uids), an ML risk score with SHAP reasons,
+hunt findings (each with a MITRE ATT&CK id and Zeek uids), an ML risk score with explanation reasons,
 and raw Zeek log rows pulled as evidence. Write a triage card for a tier-2 analyst.
 Rules:
 - Use ONLY the facts in the case. Every evidence claim must cite a finding id (e.g. LM-01) or a Zeek uid.
@@ -77,7 +77,7 @@ def gather_evidence(case, logs, per_finding=3):
 def build_prompt(case, evidence):
     slim = {k: case[k] for k in ["case_id", "score", "severity", "tactics", "kill_chain", "attack_path", "touched_hosts"]}
     slim["hosts"] = [{k: h[k] for k in ["name", "ip", "role", "score", "ml_risk", "hunt_score"]} |
-                     {"shap": [r["explanation"] for r in h["shap"]]} for h in case["hosts"][:4]]
+                     {"explanations": [r["explanation"] for r in h["explanations"]]} for h in case["hosts"][:4]]
     slim["findings"] = [{k: f[k] for k in ["hunt", "name", "attack", "severity", "src_name", "dst_name", "count", "first_ts", "detail"]}
                         for f in case["findings"]]
     return json.dumps({"case": slim, "zeek_evidence": evidence}, default=str)
@@ -128,11 +128,11 @@ def offline_card(case):
         return {"assessment": "suspicious", "confidence": "low",
                 "headline": f"{lead['name']} behaves unusually for itself, but no hunt matched",
                 "summary": f"ML risk {lead['ml_risk']:.0f}/100 compared with this host's own baseline. "
-                           f"Top reasons: {'; '.join(r['explanation'] for r in lead['shap'][:3])}. "
+                           f"Top reasons: {'; '.join(r['explanation'] for r in lead['explanations'][:3])}. "
                            "No known lateral-movement or C2 pattern fired, so this is a lead to check, not an alert.",
-                "attack_story": [], "evidence": [{"claim": r["explanation"], "source": "SHAP"} for r in lead["shap"][:3]],
+                "attack_story": [], "evidence": [{"claim": r["explanation"], "source": "Explainability"} for r in lead["explanations"][:3]],
                 "benign_explanations": ["new software or a changed user routine", "small deviations on a quiet host"],
-                "next_steps": [f"Look at {lead['name']}'s connections for the top SHAP feature", "Mark FP if it is explained: the model learns from it"]}
+                "next_steps": [f"Look at {lead['name']}'s connections for the top explanation feature", "Mark FP if it is explained: the model learns from it"]}
     story = [f"{hhmm(f['first_ts'])} {f['src_name']} → {f['dst_name']}: {f['name'].split(' (')[0]} ({f['attack'].split(',')[0]})" for f in fs]
     c2 = [f for f in fs if f["hunt"].startswith("C2")]
     lm = [f for f in fs if f["hunt"].startswith("LM")]
@@ -170,7 +170,7 @@ def offline_card(case):
         "headline": headline(case, c2, lm, creds),
         "summary": (cap("; ".join(parts)) + ". "
                     f"{len(fs)} hunt hits over {len(case['hosts'])} hosts. ML agrees: {lead['name']} is "
-                    f"{lead['ml_risk']:.0f}/100 unusual for itself ({lead['shap'][0]['explanation'] if lead['shap'] else 'n/a'})."),
+                    f"{lead['ml_risk']:.0f}/100 unusual for itself ({lead['explanations'][0]['explanation'] if lead['explanations'] else 'n/a'})."),
         "attack_story": story,
         "evidence": [{"claim": f["detail"], "source": f"{f['hunt']} · uid {f['evidence_uids'][0]}"} for f in sorted(fs, key=lambda f: -f["severity"])[:5]],
         "benign_explanations": benign,
@@ -198,7 +198,7 @@ def main():
         else:
             try:
                 card, by = call_llm(a.llm_url, a.model, prompt), a.model
-            except Exception as e:  # keep the queue moving; the analyst still has findings + SHAP
+            except Exception as e:  # keep the queue moving; the analyst still has findings + explanations
                 print(f"{case['case_id']}: LLM failed ({e}), using template")
                 card, by = offline_card(case), "offline template (LLM call failed)"
         cards[case["case_id"]] = {**card, "generated_by": by, "prompt_chars": len(prompt), "evidence": card.get("evidence", []),

@@ -1,10 +1,10 @@
 """Ask the network: the analyst asks in plain language, the LLM answers ONLY from the store.
 
-  question -> retrieve today's top new behaviours from the store (scores, SHAP reasons, hunt
+  question -> retrieve today's top new behaviours from the store (scores, explanation reasons, hunt
   findings) -> one LLM call with that context -> answer with citations -> judge checks it
 
 The LLM never sees raw logs and never decides what is anomalous: the Isolation Forest and the
-hunts did that, and SHAP says why. The LLM is the translator at the end.
+hunts did that, and the explainability layer says why. The LLM is the translator at the end.
 
   python ask.py "What abnormal behaviour happened on the network today?"
 """
@@ -18,13 +18,13 @@ import store
 SYSTEM = """You are a SOC assistant for a network security monitoring platform.
 You get CONTEXT produced by the platform for one day of Zeek network logs:
 - cases ranked by risk score. Each host has an ML risk (Isolation Forest, compared with that host's own normal),
-  SHAP reasons (why the model scored it high: "feature = today's value (this host usually X)"),
+  explanation reasons (why the model scored it high: "feature = today's value (this host usually X)"),
   and hunt findings (known attacker techniques with MITRE ATT&CK ids and evidence).
 Rules:
 1. Answer ONLY from the CONTEXT. If it does not contain the answer, say so. Never invent hosts, IPs, domains or techniques.
 2. Lead with the most important finding. For each abnormal behaviour give: host, what happened, why it was flagged
-   (quote the SHAP reason or hunt evidence), and the ATT&CK technique.
-3. Cite sources in square brackets, e.g. [HUNT-001 LM-07] or [SHAP WS-04].
+   (quote the explanation reason or hunt evidence), and the ATT&CK technique.
+3. Cite sources in square brackets, e.g. [HUNT-001 LM-07] or [EXPL WS-04].
 4. Separate confirmed hunt evidence from ML-only anomalies (leads to check, not alerts).
 5. End with 2-4 concrete next steps. Be concise: an analyst reads this in one minute."""
 
@@ -40,7 +40,7 @@ def build_context(top=5, db=store.DB):
         ctx["cases"].append({
             "case_id": c["case_id"], "score": c["score"], "severity": c["severity"], "tactics": c["tactics"],
             "hosts": [{"name": h["name"], "ip": h["ip"], "role": h["role"], "ml_risk": h["ml_risk"],
-                       "hunt_score": h["hunt_score"], "shap_why": [r["explanation"] for r in h["shap"][:4]]}
+                       "hunt_score": h["hunt_score"], "why_flagged": [r["explanation"] for r in h["explanations"][:4]]}
                       for h in c["hosts"] if h["hunt_score"] > 0 or h["ml_risk"] >= 80][:4],
             "findings": [{"id": f["hunt"], "technique": f["name"], "attack": f["attack"], "src": f["src_name"],
                           "dst": f["dst_name"], "evidence": f["detail"]} for f in c["findings"]][:12],
@@ -54,10 +54,10 @@ def template_answer(ctx):
     lines = [f"{ctx['hosts_scored']} hosts scored, {ctx['hunt_hits']} hunt hits "
              f"({ctx['suppressed_as_known_admin_behaviour']} suppressed as known admin behaviour)."]
     for c in ctx["cases"]:
-        h = c["hosts"][0] if c["hosts"] else {"name": "?", "shap_why": []}
+        h = c["hosts"][0] if c["hosts"] else {"name": "?", "why_flagged": []}
         techs = "; ".join(f"{f['technique']} ({f['attack'].split(',')[0]}) {f['src']} -> {f['dst']}" for f in c["findings"][:6])
         lines.append(f"[{c['case_id']}] {c['severity']} {h['name']}: {techs or 'ML anomaly only'}. "
-                     f"Why: {'; '.join(h['shap_why'][:2])}.")
+                     f"Why: {'; '.join(h['why_flagged'][:2])}.")
     return "\n".join(lines)
 
 

@@ -1,9 +1,9 @@
-"""Daily hunt: run all hunts, score every host with ML, explain with SHAP, group into cases.
+"""Daily hunt: run all hunts, score every host with ML, explain the score, group into cases.
 
   python hunt.py --baseline data/baseline --day data/hunt --out out [--xgb feedback/model_xgb.joblib]
 
 Outputs (in --out):
-  cases.json        ranked hunt cases: hosts, findings (ATT&CK + Zeek uids), SHAP reasons,
+  cases.json        ranked hunt cases: hosts, findings (ATT&CK + Zeek uids), explanation reasons,
                     attack path, timeline. This is what the LLM agent and the dashboard read.
   host_scores.csv   every host with features, ML risk, hunt score (input for analyst feedback)
 """
@@ -15,9 +15,9 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-import shap
 from sklearn.ensemble import IsolationForest
 
+from explainability import TreeAttribution, _Precomputed
 from hunts import FEATURE_TEXT, FEATURES, LM_FEATURES, HuntEngine, load_day, workstation
 
 # ip -> {"name": ..., "role": ...}. In production this comes from DHCP / DNS / the CMDB.
@@ -58,8 +58,8 @@ def self_delta(df, host_med):
     return (X.reset_index(drop=True) - ref).clip(lower=0).set_axis(X.index)
 
 
-def shap_reasons(explainer, X, raw, base_med, sign=-1, k=5):
-    sv = explainer.shap_values(X) * sign            # IF: low path length = anomalous, so flip
+def explain_host(attribution, X, raw, base_med, sign=-1, k=5):
+    sv = attribution.contributions(X) * sign        # IF: low path length = anomalous, so flip
     out = []
     for i in range(len(X)):
         order = np.argsort(-sv[i])
@@ -108,14 +108,14 @@ def main():
     X = self_delta(feats, base_med)
     s = -forest.score_samples(X)
     feats["ml_risk"] = [round(100 * (base_scores < v).mean(), 1) for v in s]   # percentile vs baseline hosts
-    reasons = shap_reasons(shap.TreeExplainer(forest), X, feats, base_med)
+    reasons = explain_host(TreeAttribution(forest), X, feats, base_med)
     model_name = "Isolation Forest"
     if a.xgb:
         m = joblib.load(a.xgb)
         Xx = X.assign(if_score=s)
         feats["ml_risk"] = (100 * m.predict_proba(Xx)[:, 1]).round(1)
-        sv = shap.TreeExplainer(m).shap_values(Xx)
-        reasons = shap_reasons(type("E", (), {"shap_values": lambda self, _: sv[:, :len(FEATURES)]})(), X, feats, base_med, sign=1)
+        sv = TreeAttribution(m).contributions(Xx)
+        reasons = explain_host(_Precomputed(sv[:, :len(FEATURES)]), X, feats, base_med, sign=1)
         model_name = "XGBoost (analyst feedback)"
 
     live = [f for f in findings if not f["suppressed"]]
@@ -166,7 +166,7 @@ def main():
             "title": "", "tactics": tactics, "kill_chain": chain,
             "hosts": [{"ip": h, "name": name(h), "role": role(h), "score": float(fi.loc[h, "score"]),
                        "ml_risk": float(fi.loc[h, "ml_risk"]), "hunt_score": float(fi.loc[h, "hunt_score"]),
-                       "shap": rs[h], "features": {k: float(fi.loc[h, k]) for k in FEATURES if fi.loc[h, k]}}
+                       "explanations": rs[h], "features": {k: float(fi.loc[h, k]) for k in FEATURES if fi.loc[h, k]}}
                       for h in hosts if h in fi.index],
             "touched_hosts": [{"ip": t, "name": name(t), "role": role(t)} for t in touched],
             "attack_path": [{"src": name(s_), "dst": name(d), "hunt": h} for s_, d, h in edges if s_ in members],
@@ -188,7 +188,7 @@ def main():
         print(f"{c['case_id']}  {c['score']:5.1f}  {c['severity']:8s} {c['title']}")
         for h in c["hosts"]:
             print(f"     {h['name']:7s} score {h['score']:5.1f}  ML {h['ml_risk']:5.1f}  hunts {h['hunt_score']:3.0f}  "
-                  f"SHAP: {'; '.join(r['explanation'] for r in h['shap'][:3])}")
+                  f"Explainability: {'; '.join(r['explanation'] for r in h['explanations'][:3])}")
     gt = os.path.join(a.day, "ground_truth.csv")
     if os.path.exists(gt):
         t = pd.read_csv(gt)

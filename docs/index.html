@@ -1,216 +1,316 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NSM Hunt Console</title>
 <style>
-:root{--bg:#0b0f17;--panel:#121826;--panel2:#182032;--line:#243049;--txt:#e6ebf5;--mut:#8b97b0;--acc:#5aa9ff;
---crit:#ff4d6d;--high:#ff9f43;--med:#ffd166;--low:#4cc9a6;--c2:#c77dff;--lm:#5aa9ff;--cred:#ff7b54;--disc:#7bdff2}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.45 "Segoe UI",Inter,DejaVu Sans,Arial,sans-serif}
-header{display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:1px solid var(--line);background:#0e1420}
-.logo{font-weight:700;font-size:16px;letter-spacing:.3px}.logo span{color:var(--acc)}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid var(--line);border-radius:999px;color:var(--mut);font-size:11.5px;white-space:nowrap}
-.chip b{color:var(--txt);font-weight:600}.dot{width:7px;height:7px;border-radius:50%;background:var(--low)}
-.kpis{display:flex;gap:10px;padding:12px 20px}
-.kpi{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
-.kpi .v{font-size:22px;font-weight:700}.kpi .l{color:var(--mut);font-size:11.5px}
-main{display:grid;grid-template-columns:330px 1fr 430px;gap:12px;padding:0 20px 20px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
-h3{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:600}
-.tabs{display:flex;gap:6px;margin-bottom:10px}.tab{padding:4px 10px;border-radius:6px;background:var(--panel2);color:var(--mut);cursor:pointer;font-size:12px}
-.tab.on{background:var(--acc);color:#04101f;font-weight:600}
-.case{display:flex;gap:10px;padding:10px;border:1px solid var(--line);border-radius:9px;margin-bottom:8px;cursor:pointer;background:var(--panel2);position:relative}
-.case.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
-.score{flex:0 0 46px;height:46px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;border:3px solid}
-.case .t{font-weight:600;font-size:12.5px}.case .m{color:var(--mut);font-size:11.5px;margin-top:3px}
-.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.tag{font-size:10.5px;padding:1px 7px;border-radius:5px;background:#0d1320;border:1px solid var(--line)}
-.lab{position:absolute;top:8px;right:8px;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px}
-.sev-critical{color:var(--crit);border-color:var(--crit)}.sev-high{color:var(--high);border-color:var(--high)}.sev-medium{color:var(--med);border-color:var(--med)}.sev-low{color:var(--low);border-color:var(--low)}
-.center{display:flex;flex-direction:column;gap:12px;min-width:0}
-.ch{display:flex;align-items:center;gap:12px}.ch .id{color:var(--mut);font-weight:600}.ch .title{font-size:17px;font-weight:700}
-.chain{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}.arrow{color:var(--mut)}
-.row2{display:grid;grid-template-columns:1.25fr 1fr;gap:12px}
-svg text{fill:var(--txt);font-size:11px}
-.bar{display:grid;grid-template-columns:200px 1fr 46px;align-items:center;gap:8px;margin:7px 0}
-.bar .n{font-size:12px}.bar .n small{display:block;color:var(--mut);font-size:10.5px}
-.track{height:14px;background:#0d1320;border-radius:4px;overflow:hidden}.fill{height:100%;background:linear-gradient(90deg,#ff7b54,#ff4d6d);border-radius:4px}
-.bar .val{color:var(--mut);font-size:11px;text-align:right}
-table{width:100%;border-collapse:collapse;font-size:12px}th{color:var(--mut);text-align:left;font-weight:600;padding:6px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-td{padding:6px;border-bottom:1px solid #1c2538;vertical-align:top}td.mono,.mono{font-family:"DejaVu Sans Mono",Consolas,monospace;font-size:11px;color:#9fb3d9}
-.hid{white-space:nowrap;font-weight:700;font-size:11px;padding:1px 6px;border-radius:4px}
-.tri .badge{display:inline-block;padding:3px 10px;border-radius:6px;font-weight:700;font-size:12px}
-.tri .hl{font-size:15px;font-weight:700;margin:10px 0 6px}.tri p{margin:6px 0;color:#cdd6e8}
-.tri ol,.tri ul{margin:4px 0 8px;padding-left:18px}.tri li{margin:3px 0}
-.sec{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.7px;margin-top:12px;font-weight:600}
-.cite{color:var(--acc);font-family:"DejaVu Sans Mono",monospace;font-size:10.5px}
-.foot{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);color:var(--mut);font-size:11px}
-.dec{display:flex;gap:8px;margin-top:10px}.btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);font-weight:700;cursor:pointer;font-size:13px}
-.btn.tp{border-color:var(--crit);color:var(--crit)}.btn.fp{border-color:var(--low);color:var(--low)}.btn.on.tp{background:var(--crit);color:#fff}.btn.on.fp{background:var(--low);color:#04101f}
-select,textarea{width:100%;margin-top:8px;background:#0d1320;color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:7px;font:inherit}
-.small{font-size:11px;color:var(--mut)}
-.answer{white-space:pre-wrap;margin-top:10px;font-size:13px;line-height:1.55;color:#dbe3f3}.answer:empty{display:none}
-.jg{display:inline-flex;gap:6px;flex-wrap:wrap;margin-top:8px}.preset{cursor:pointer}
-.flowwrap{padding:12px 20px 0}
-.flow{display:flex;align-items:stretch;overflow-x:auto;padding-bottom:4px}
-.stage{flex:1 1 0;min-width:122px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
-.stage .sn{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
-.stage .sv{font-size:15px;font-weight:700;margin:3px 0 1px}.stage .sd{font-size:10.5px;color:var(--mut);line-height:1.3}
-.stage.ml{border-color:var(--acc)}.stage.ml .sv{color:var(--acc)}
-.stage.shap{border-color:var(--cred)}.stage.shap .sv{color:var(--cred)}
-.stage.llm{border-color:var(--c2)}.stage.llm .sv{color:var(--c2)}
-.flowarrow{display:flex;align-items:center;color:var(--mut);padding:0 5px;font-size:15px;flex:0 0 auto}
-.ribbon{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.ribbon .rb{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:12px;color:var(--mut)}
-.ribbon .rb b{color:var(--txt)}.ribbon .rb.good b{color:var(--low)}.ribbon .rb.crit b{color:var(--crit)}
-@media (max-width:1100px){main{grid-template-columns:1fr}.row2{grid-template-columns:1fr}.kpis{flex-wrap:wrap}.kpi{min-width:40%}}
+:root{
+ --bg:#0a0e15;--bg2:#0d1220;--surface:#111826;--surface2:#151d2e;--surface3:#1a2334;
+ --line:#222c40;--line2:#2b374f;--txt:#e9eef8;--txt2:#c2ccde;--mut:#8491ab;--mut2:#5e6b85;
+ --acc:#4f8cff;--acc2:#6ea0ff;
+ --crit:#ff5c78;--high:#ff9d4d;--med:#ffce4d;--low:#33d19e;
+ --c2:#b98bff;--lm:#4f8cff;--cred:#ff8a5c;--disc:#44d4e6;
+ --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.5);
+ --r:12px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(1200px 600px at 80% -10%,#101a2e 0,var(--bg) 60%) fixed,var(--bg);
+ color:var(--txt);font:13.5px/1.5 "Inter","Segoe UI",system-ui,DejaVu Sans,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono","DejaVu Sans Mono",Consolas,monospace}
+a{color:var(--acc2);text-decoration:none}
+/* top bar */
+header{display:flex;align-items:center;gap:14px;padding:13px 24px;border-bottom:1px solid var(--line);
+ background:rgba(10,14,21,.75);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:.2px}
+.brand .mk{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--acc),#8a5bff);
+ display:grid;place-items:center;font-size:14px;box-shadow:0 0 16px -4px var(--acc)}
+.brand small{color:var(--mut);font-weight:600;font-size:11px;letter-spacing:.6px;text-transform:uppercase;margin-left:2px}
+.spring{flex:1}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border:1px solid var(--line2);border-radius:999px;color:var(--mut);font-size:11.5px;white-space:nowrap;background:var(--surface)}
+.chip b{color:var(--txt2);font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--low);box-shadow:0 0 8px var(--low)}
+/* pipeline strip */
+.flow{display:flex;align-items:center;gap:0;overflow-x:auto;padding:12px 24px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.flow::-webkit-scrollbar{height:0}
+.stg{flex:1 1 0;min-width:120px;padding:4px 2px}
+.stg .sn{font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.7px;font-weight:600}
+.stg .sv{font-size:13.5px;font-weight:700;margin:2px 0 1px;color:var(--txt)}
+.stg .sd{font-size:10.5px;color:var(--mut);line-height:1.25}
+.stg.on .sv{color:var(--acc2)}.stg.ex .sv{color:var(--cred)}.stg.ai .sv{color:var(--c2)}
+.far{color:var(--mut2);padding:0 2px;flex:0 0 auto;font-size:13px}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:16px 24px 4px}
+.kpi{background:linear-gradient(180deg,var(--surface),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;box-shadow:var(--shadow)}
+.kpi .v{font-size:25px;font-weight:750;letter-spacing:-.5px;line-height:1.1}
+.kpi .l{color:var(--mut);font-size:11.5px;margin-top:3px}
+.kpi.crit .v{color:var(--crit)}
+.ribbon{display:flex;flex-wrap:wrap;gap:8px;padding:12px 24px 2px}
+.rb{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--mut)}
+.rb b{color:var(--txt2)}.rb.good b{color:var(--low)}.rb.crit b{color:var(--crit)}
+/* layout */
+main{display:grid;grid-template-columns:375px 1fr;gap:16px;padding:16px 24px 28px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:16px 18px}
+h3{margin:0 0 12px;font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--mut);font-weight:700}
+/* queue */
+.seg{display:inline-flex;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px;margin-bottom:12px}
+.seg span{padding:5px 11px;border-radius:7px;color:var(--mut);cursor:pointer;font-size:12px;font-weight:600}
+.seg span.on{background:var(--surface3);color:var(--txt)}
+.case{display:flex;gap:12px;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;cursor:pointer;background:var(--surface2);position:relative;transition:border-color .12s,transform .12s}
+.case:hover{border-color:var(--line2)}
+.case.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset,0 0 22px -12px var(--acc)}
+.ring{flex:0 0 44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;position:relative}
+.ring::before{content:"";position:absolute;inset:0;border-radius:50%;border:3px solid currentColor;opacity:.9}
+.case .t{font-weight:650;font-size:12.5px;letter-spacing:.1px}
+.case .m{color:var(--mut);font-size:11.5px;margin-top:3px;line-height:1.35}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.tag{font-size:10.5px;padding:2px 8px;border-radius:6px;background:var(--bg2);border:1px solid var(--line2);color:var(--mut)}
+.lab{position:absolute;top:10px;right:10px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px}
+.sev-critical{color:var(--crit)}.sev-high{color:var(--high)}.sev-medium{color:var(--med)}.sev-low{color:var(--low)}
+.muted{color:var(--mut);font-size:11.5px}
+details.lib{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+details.lib summary{cursor:pointer;color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;list-style:none}
+details.lib summary::-webkit-details-marker{display:none}
+details.lib summary::before{content:"▸ ";color:var(--mut2)}
+details.lib[open] summary::before{content:"▾ "}
+.librow{display:flex;gap:9px;align-items:center;margin:6px 0;font-size:11.5px}
+.hid{font-weight:700;font-size:10.5px;padding:2px 7px;border-radius:5px;min-width:46px;text-align:center;color:#06101f}
+/* right column */
+.ask{display:flex;gap:9px;align-items:center}
+.ask input{flex:1;background:var(--bg2);color:var(--txt);border:1px solid var(--line2);border-radius:10px;padding:12px 14px;font:inherit}
+.ask input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(79,140,255,.15)}
+.btn{padding:11px 16px;border-radius:10px;border:1px solid var(--line2);background:var(--surface3);color:var(--txt);font-weight:650;cursor:pointer;font-size:13px}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#061024}
+.btn.pri:hover{background:var(--acc2)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.presets .tag{cursor:pointer}.presets .tag:hover{border-color:var(--acc);color:var(--txt2)}
+.answer{margin-top:12px;font-size:13.5px;line-height:1.6;color:var(--txt2);white-space:pre-wrap}.answer:empty{display:none}
+.jg{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.ch2{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.ch2 .big{font-size:18px;font-weight:750;letter-spacing:-.2px}
+.ch2 .id{color:var(--mut);font-size:11.5px;font-weight:600;margin-bottom:3px;letter-spacing:.3px}
+.chain{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid var(--line)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line2)}
+.arrow{color:var(--mut2)}
+/* tabs */
+.tabrow{display:flex;gap:4px;padding:10px 14px 0;border-bottom:1px solid var(--line)}
+.tabrow span{padding:9px 14px;border-radius:9px 9px 0 0;color:var(--mut);cursor:pointer;font-size:12.5px;font-weight:650;border:1px solid transparent;border-bottom:none;margin-bottom:-1px}
+.tabrow span.on{color:var(--txt);background:var(--surface2);border-color:var(--line)}
+.tabc{padding:18px}
+/* explainability bars */
+.ht{display:inline-flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ht span{padding:5px 10px;border-radius:8px;background:var(--bg2);border:1px solid var(--line2);color:var(--mut);cursor:pointer;font-size:12px;font-weight:600}
+.ht span.on{background:var(--acc);border-color:var(--acc);color:#061024}
+.bar{display:grid;grid-template-columns:230px 1fr 54px;align-items:center;gap:12px;margin:11px 0}
+.bar .n{font-size:12.5px}.bar .n small{display:block;color:var(--mut);font-size:10.5px;margin-top:2px}
+.track{height:12px;background:var(--bg2);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.fill{height:100%;background:linear-gradient(90deg,#ff8a5c,#ff5c78);border-radius:6px}
+.bar .val{color:var(--cred);font-size:11.5px;text-align:right;font-weight:650}
+.note{color:var(--mut);font-size:11.5px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);line-height:1.5}
+/* timeline table */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{color:var(--mut);text-align:left;font-weight:600;padding:8px 8px;border-bottom:1px solid var(--line);font-size:10.5px;text-transform:uppercase;letter-spacing:.6px}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.mono{color:#9fb3d9;font-size:11px}
+/* triage overview */
+.badge{display:inline-flex;padding:4px 11px;border-radius:7px;font-weight:750;font-size:11.5px;letter-spacing:.3px}
+.hl{font-size:16px;font-weight:700;margin:14px 0 8px;line-height:1.35}
+.tri p{margin:8px 0;color:var(--txt2)}
+.sec{color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;margin:16px 0 6px;font-weight:700}
+.tri ol,.tri ul{margin:4px 0 8px;padding-left:18px}.tri li{margin:4px 0}
+.cite{color:var(--acc2);font-size:10.5px}
+.foot{margin-top:14px;padding-top:11px;border-top:1px solid var(--line);color:var(--mut);font-size:11px;line-height:1.5}
+.dec{display:flex;gap:10px;margin-top:10px}
+.bd{flex:1;padding:11px;border-radius:10px;border:1px solid var(--line2);background:var(--surface3);color:var(--txt);font-weight:700;cursor:pointer;font-size:13px}
+.bd.tp{border-color:var(--crit);color:var(--crit)}.bd.fp{border-color:var(--low);color:var(--low)}
+.bd.on.tp{background:var(--crit);color:#fff}.bd.on.fp{background:var(--low);color:#06101f}
+select{width:100%;margin-top:10px;background:var(--bg2);color:var(--txt);border:1px solid var(--line2);border-radius:9px;padding:9px;font:inherit}
+svg text{fill:var(--txt)}
+@media (max-width:1050px){main{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style></head><body>
-<header><div class="logo">NSM <span>Hunt Console</span></div>
-<span class="chip">Hunt day <b id="day"></b></span>
-<span class="chip"><span class="dot"></span>Zeek sensor <b id="src">logs</b></span>
-<span class="chip">ML <b id="model"></b> + SHAP</span>
-<span class="chip">LLM <b id="llmname">Ollama</b> · self-hosted · open source</span>
-<span style="flex:1"></span><span class="chip">Analyst <b>SOC T2</b></span></header>
-<section class="flowwrap"><h3 style="margin:0 0 8px">Pipeline · packets become an answer the analyst can read</h3>
- <div class="flow" id="flow"></div><div class="ribbon" id="ribbon"></div></section>
+<header>
+ <div class="brand"><span class="mk">◆</span>NSM Hunt Console<small>Network Detection &amp; Response</small></div>
+ <span class="spring"></span>
+ <span class="chip"><span class="dot"></span>Zeek sensor <b id="src">live</b></span>
+ <span class="chip">ML <b id="model">Isolation Forest</b></span>
+ <span class="chip">LLM <b id="llmname">Ollama</b> · self-hosted</span>
+ <span class="chip">Hunt day <b id="day"></b></span>
+</header>
+<div class="flow" id="flow"></div>
 <div class="kpis" id="kpis"></div>
+<div class="ribbon" id="ribbon"></div>
 <main>
- <section class="panel"><h3>Hunt queue · ranked</h3>
-  <div class="tabs"><span class="tab on" data-f="all">All</span><span class="tab" data-f="Lateral Movement">Lateral movement</span><span class="tab" data-f="Command and Control">C2</span></div>
+ <section class="card pad">
+  <h3>Priority queue</h3>
+  <div class="seg" id="seg"><span class="on" data-f="all">All</span><span data-f="Lateral Movement">Lateral movement</span><span data-f="Command and Control">C2</span></div>
   <div id="queue"></div>
-  <div class="small" style="margin-top:6px" id="supp"></div>
-  <h3 style="margin-top:16px">Hunt library · hits today</h3><div id="lib"></div>
+  <div class="muted" id="supp" style="margin-top:8px"></div>
+  <details class="lib"><summary>Hunt coverage · hits today</summary><div id="lib" style="margin-top:10px"></div></details>
  </section>
- <section class="center">
-  <div class="panel ask" id="askp"><h3>Ask the network · answers come from the stored ML + SHAP + hunt output</h3>
-   <div style="display:flex;gap:8px"><input id="q" placeholder="e.g. What abnormal behaviour happened on the network today?" style="flex:1;background:#0d1320;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit">
-   <button class="btn" style="flex:0 0 90px;border-color:var(--acc);color:var(--acc)" onclick="askQ()">Ask</button></div>
-   <div class="tags" style="margin-top:8px" id="presets"></div>
-   <div id="ans" class="answer"></div></div>
-  <div class="panel"><div class="ch"><div class="score" id="cscore"></div><div><div class="id" id="cid"></div><div class="title" id="ctitle"></div></div></div>
-   <div class="chain" id="chain"></div></div>
-  <div class="row2">
-   <div class="panel"><h3>Attack path (from hunt findings)</h3><svg id="graph" width="100%" height="360" viewBox="0 0 620 360"></svg></div>
-   <div class="panel"><h3>Why the ML flagged it · SHAP</h3><div class="tabs" id="htabs"></div><div id="shap"></div>
-     <div class="small" id="mlnote" style="margin-top:6px"></div></div>
+ <section>
+  <div class="card pad" style="margin-bottom:16px">
+   <h3>Ask the network · answered from the stored ML + explainability + hunt output</h3>
+   <div class="ask"><input id="q" placeholder="What abnormal behaviour happened on the network today?">
+    <button class="btn pri" onclick="askQ()">Ask</button></div>
+   <div class="presets" id="presets"></div>
+   <div id="ans" class="answer"></div>
   </div>
-  <div class="panel"><h3>Hunt findings · timeline (UTC)</h3><table><thead><tr><th>Time</th><th>Hunt</th><th>Source → target</th><th>ATT&CK</th><th>What Zeek saw</th><th>Evidence</th></tr></thead><tbody id="tl"></tbody></table></div>
+  <div class="card">
+   <div class="ch2"><div class="ring" id="cring"></div><div><div class="id" id="cid"></div><div class="big" id="ctitle"></div></div></div>
+   <div class="chain" id="chain"></div>
+   <div class="tabrow" id="tabrow">
+     <span data-t="overview" class="on">Overview</span><span data-t="explain">Explainability</span>
+     <span data-t="timeline">Timeline</span><span data-t="graph">Attack path</span></div>
+   <div class="tabc" id="tabc"></div>
+  </div>
  </section>
- <section class="panel tri" id="tri"></section>
 </main>
 <script>
-const D={"model": "Isolation Forest", "hunt_day": "/tmp/claude-0/-home-user/9472cb33-b42f-5c7a-8bc9-6256b33946be/scratchpad/logs/attack-day", "hosts_scored": 7, "findings_total": 16, "findings_suppressed": 6, "cases": [{"score": 100.0, "severity": "critical", "title": "WS-04: DCSync from a non-DC, Beaconing, Admin share + remote service +6 more", "tactics": ["Command and Control", "Credential Access", "Discovery", "Lateral Movement"], "kill_chain": true, "hosts": [{"ip": "10.77.0.104", "name": "WS-04", "role": "workstation", "score": 99.0, "ml_risk": 95.2, "hunt_score": 95.0, "shap": [{"feature": "max_ext_duration_h", "text": "longest external connection (h)", "value": 0.06668401638666789, "baseline_median": 8.980830510457358e-06, "contribution": 2.6907, "explanation": "longest external connection (h) = 0.07 (this host usually 0.00)"}, {"feature": "nxdomain_names", "text": "failed DNS names", "value": 3.0, "baseline_median": 2.0, "contribution": 0.9804, "explanation": "failed DNS names = 3 (this host usually 2)"}], "features": {"internal_fanout": 9.0, "new_internal_pairs": 5.0, "failed_internal_ratio": 0.5757575757575758, "admin_share_maps": 2.0, "remote_service_created": 2.0, "dcsync_calls": 2.0, "ntlm_dst": 6.0, "tgs_services": 8.0, "rc4_tgs_services": 6.0, "max_beacon_score": 0.9632903796384203, "max_ext_duration_h": 0.06668401638666789, "new_domain_new_ja3": 1.0, "nxdomain_names": 3.0, "nx_randomness": 2.587306415391376, "new_domains": 61.0}}, {"ip": "10.77.0.102", "name": "WS-02", "role": "workstation", "score": 63.4, "ml_risk": 90.5, "hunt_score": 0.0, "shap": [{"feature": "max_ext_duration_h", "text": "longest external connection (h)", "value": 1.473334100511339e-05, "baseline_median": 9.931988186306424e-06, "contribution": 3.1162, "explanation": "longest external connection (h) = 0.00 (this host usually 0.00)"}, {"feature": "failed_internal_ratio", "text": "share of failed internal connections", "value": 0.625, "baseline_median": 0.5555555555555556, "contribution": 0.2863, "explanation": "share of failed internal connections = 0.62 (this host usually 0.56)"}], "features": {"internal_fanout": 2.0, "failed_internal_ratio": 0.625, "ntlm_dst": 1.0, "tgs_services": 2.0, "max_ext_duration_h": 1.473334100511339e-05, "nxdomain_names": 1.0, "nx_randomness": 2.587306415391376}}], "touched_hosts": [{"ip": "10.77.0.10", "name": "DC01", "role": "domain controller"}, {"ip": "10.77.0.101", "name": "WS-01", "role": "workstation"}, {"ip": "10.77.0.103", "name": "WS-03", "role": "workstation"}, {"ip": "10.77.0.105", "name": "WS-05", "role": "workstation"}], "attack_path": [{"src": "WS-04", "dst": "WS-02", "hunt": "LM-01"}, {"src": "WS-04", "dst": "FS01", "hunt": "LM-01"}, {"src": "WS-04", "dst": "DC01", "hunt": "LM-07"}, {"src": "WS-04", "dst": "DC01", "hunt": "LM-05"}, {"src": "WS-04", "dst": "WS-01", "hunt": "LM-05"}, {"src": "WS-04", "dst": "WS-02", "hunt": "LM-05"}, {"src": "WS-04", "dst": "WS-03", "hunt": "LM-05"}, {"src": "WS-04", "dst": "WS-05", "hunt": "LM-05"}, {"src": "WS-04", "dst": "FS01", "hunt": "LM-05"}], "findings": [{"hunt": "C2-01", "name": "Beaconing (regular timing + same-size payloads)", "tactic": "Command and Control", "attack": "T1071.001, T1573", "severity": 91, "src": "10.77.0.104", "dst": "cdn-update-check.online", "count": 38, "first_ts": 1795702737.932049, "last_ts": 1795703035.791492, "detail": "38 connections to cdn-update-check.online (10.77.0.250) every ~8s, timing 0.88, payload size 1.00, active 100% of the day (beacon score 0.96)", "evidence_uids": ["CkasKa3PMKv19IIui7", "CXWV5c3dy8GA3oVWZk", "CiGu0L2yyD0mHNmqpl", "CFdsFB1QhBTMhmCE6l", "C2lKCJGwyxt1WI022", "C0xc6ENyiPc5eqR47", "Cb3KV33YgMv3xSc15", "CGNdFZ1WRhmdAWrnqd", "CserFE2YMkeZAjj8vf", "CeuoPB0dGzj9XRoOd", "CYwU8k2r5ZQP84tQn4", "C6I5m93qTA2IqK3hV9", "CiWrIc2o1zfsGEcbrb", "CVEjzz18bmADlBIj3g", "CPRess1QQq24Ei2dlj", "C9yqwX3u58KKjil1nk", "CEmjvnonUDIy0GyN3", "CMvP9f4YO84nRhY8R3", "Cy2Gbk1HlPl6o4o4bh", "Cit9yd2xgOg0flpOHb", "C7dSJW3M1qKVOOkXZ9", "Ceuxk24jwLdkKSNnk", "CZTXpj3xSMGqadOEo", "Cgpue41WZoJCOGWomh", "Cl0F7j3FfdsxnKpxuh"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "cdn-update-check.online"}, {"hunt": "C2-04", "name": "New domain + TLS client fingerprint (JA3) never seen", "tactic": "Command and Control", "attack": "T1071.001", "severity": 45, "src": "10.77.0.104", "dst": "cdn-update-check.online", "count": 38, "first_ts": 1795702737.932049, "last_ts": 1795703035.791492, "detail": "first time anyone here reached cdn-update-check.online, (no JA3 in this sensor's ssl.log, so domain novelty only)", "evidence_uids": ["CkasKa3PMKv19IIui7", "CXWV5c3dy8GA3oVWZk", "CiGu0L2yyD0mHNmqpl", "CFdsFB1QhBTMhmCE6l", "C2lKCJGwyxt1WI022", "C0xc6ENyiPc5eqR47", "Cb3KV33YgMv3xSc15", "CGNdFZ1WRhmdAWrnqd", "CserFE2YMkeZAjj8vf", "CeuoPB0dGzj9XRoOd", "CYwU8k2r5ZQP84tQn4", "C6I5m93qTA2IqK3hV9", "CiWrIc2o1zfsGEcbrb", "CVEjzz18bmADlBIj3g", "CPRess1QQq24Ei2dlj", "C9yqwX3u58KKjil1nk", "CEmjvnonUDIy0GyN3", "CMvP9f4YO84nRhY8R3", "Cy2Gbk1HlPl6o4o4bh", "Cit9yd2xgOg0flpOHb", "C7dSJW3M1qKVOOkXZ9", "Ceuxk24jwLdkKSNnk", "CZTXpj3xSMGqadOEo", "Cgpue41WZoJCOGWomh", "Cl0F7j3FfdsxnKpxuh"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "cdn-update-check.online"}, {"hunt": "LM-08", "name": "Internal sweep of SMB/RPC/RDP ports", "tactic": "Discovery", "attack": "T1046, T1135", "severity": 55, "src": "10.77.0.104", "dst": "9 hosts", "count": 66, "first_ts": 1795702741.510876, "last_ts": 1795703021.695131, "detail": "66 connections to 9 internal hosts on ports [135, 445, 3389], 58% failed", "evidence_uids": ["C0r48I3QCR7s2QpOB8", "CZIxW73KcwSeGJx9y6", "CgjLgC1qOMGy7ic2P7", "Cv00r621FcRYEVfPSd", "CQ387f40B724aiUhvc", "CiRolD1yFUwVHwYRPg", "CjCcxd3b9dnZhVnvqg", "Cn7tO72WipfehOO55c", "CdTs98lentPnwel62", "CP3zpM34xmChPjFJEd", "C7PK8m1G9IV8yefvPb", "CGk39Vjnwy27FOp38", "CZyRxo4yG9z2ANCKuf", "CB4tCy1ToC43X2VZXc", "CD5fLDTHT61rUc3O3", "C9AdnA46u2ZeWinxb4", "CPTinh1XdueDbrGRv2", "CCo86Q33U6gMJLGUy3", "CRIHkx3dAwyOJnUsA2", "CiT7Da2OCmWC3Nvxf1", "CxNtssQNNXB1aqSk3", "CXNxdt3r248QT5xQi5", "CqKXX92JyYp4YzDv7", "CGRiKieKuizEzEJPk", "CSecTv2BJVoASzi3wc"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "9 hosts"}, {"hunt": "C2-02", "name": "Long-lived external connection", "tactic": "Command and Control", "attack": "T1572, T1571", "severity": 55, "src": "10.77.0.104", "dst": "10.77.0.250", "count": 1, "first_ts": 1795702742.941169, "last_ts": 1795702742.941169, "detail": "0.1h connection to 10.77.0.250:8443, only 0.0 MB out / 0.0 MB in (interactive, not a download)", "evidence_uids": ["CoaxrG4TmeNTquqsVh"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "c2"}, {"hunt": "C2-03", "name": "DGA: burst of random-looking failed lookups", "tactic": "Command and Control", "attack": "T1568.002", "severity": 70, "src": "10.77.0.104", "dst": "56 domains", "count": 56, "first_ts": 1795702751.363214, "last_ts": 1795702999.85546, "detail": "56 distinct random-looking names that did not resolve, e.g. aeurnuyjjnzg.info, aiglrudtfljvcuvf.info, akqteqtrfbgllt.info (domain generation algorithm)", "evidence_uids": ["C8jPbn3iZK5QIXNVLd", "Cu7EVY1FviPD0g76m", "CnOzcy4powMH5aR6sg", "CHjsCDEh2P6erqVrj", "Cqbjdc4drmomDJRGRb", "CYzTBa4lQRr8hlqVTj", "CMXpy2cGjQ4vsfirl", "Ca8ht52BT0OEwWoTB1", "CnjLJA3FBIuzRMHFU1", "C0gDEu2ijLIqzsVZM3", "CILmuL3stNoqTFYRn9", "CVZGsE6nbK4zHGXa4", "CaVV3w1c18NdwDAi6k", "CGuVVfN5Trc0q0q5b", "CZdzs91Kebud92zwX", "CLlOAc7PcXFMuxA25", "CxdrNIiQv8alXebId", "C9vUtR1hXq5U6Wdyya", "CTv1mF39TN7eT1A6Pe", "CUCyOJ1pNwZkDgWESk", "Cq06G23xanL92QkYye", "CuqFFd2WaS0YTq9OZe", "CRF10x1TAIyPIwKCo1", "CHptjM1Tjex0und5O1", "C6Kcib3voBrq1j81pl"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "56 domains"}, {"hunt": "LM-06", "name": "Kerberoasting (RC4 service tickets for many SPNs)", "tactic": "Credential Access", "attack": "T1558.003", "severity": 80, "src": "10.77.0.104", "dst": "DC (KDC)", "count": 6, "first_ts": 1795702827.952569, "last_ts": 1795702839.049429, "detail": "6 RC4 service tickets in 0.2 min, e.g. MSSQLSvc/sql.corp.lab:1433, MSSQLSvc/web.corp.lab:1433, MSSQLSvc/backup.corp.lab:1433", "evidence_uids": ["CTcQep4HiAxvxncDM1", "C3OFrr4j7JvWQy9fef", "CU5jbg344nvplfW4M1", "Cvzvkf1hZg58xCVT8b", "CxYszw8hlVjleLRG4", "CkxYmrsENtUVU5l5h"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "DC (KDC)"}, {"hunt": "LM-05", "name": "NTLM fan-out with one account (pass-the-hash)", "tactic": "Lateral Movement", "attack": "T1550.002", "severity": 75, "src": "10.77.0.104", "dst": "6 hosts", "count": 10, "first_ts": 1795702858.006819, "last_ts": 1795702957.938713, "detail": "NTLM logons as 'adm_it' to 6 hosts in 2 min (this host normally uses Kerberos)", "evidence_uids": ["Ci6HgxHWWmKSjGIu1", "CXFAd1SsnZ1h3HxS5", "C71Skh4hmfPefCkZc9", "Csbhv48mZDtKipMY7", "Cmyb4x3IigSJKN5cBl", "C4542t3MrjrTnoZeVb", "CUugdq4EXiVovVT0fh", "CaLrRw1bmssZi2SpWg", "CIkNvzdc3Oya2ndyg", "CpsV9h34q3zwQwsppl"], "targets": ["10.77.0.10", "10.77.0.101", "10.77.0.102", "10.77.0.103", "10.77.0.105", "10.77.0.20"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "6 hosts"}, {"hunt": "LM-01", "name": "Admin share + remote service (PsExec style)", "tactic": "Lateral Movement", "attack": "T1021.002, T1569.002", "severity": 85, "src": "10.77.0.104", "dst": "10.77.0.102", "count": 2, "first_ts": 1795702858.01118, "last_ts": 1795702858.02075, "detail": "mapped \\\\10.77.0.102\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)", "evidence_uids": ["Ci6HgxHWWmKSjGIu1"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "WS-02"}, {"hunt": "LM-01", "name": "Admin share + remote service (PsExec style)", "tactic": "Lateral Movement", "attack": "T1021.002, T1569.002", "severity": 85, "src": "10.77.0.104", "dst": "10.77.0.20", "count": 2, "first_ts": 1795702863.037772, "last_ts": 1795702863.251701, "detail": "mapped \\\\10.77.0.20\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)", "evidence_uids": ["CXFAd1SsnZ1h3HxS5"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "FS01"}, {"hunt": "LM-07", "name": "DCSync from a non-DC", "tactic": "Credential Access", "attack": "T1003.006", "severity": 95, "src": "10.77.0.104", "dst": "10.77.0.10", "count": 2, "first_ts": 1795702888.100845, "last_ts": 1795702888.10729, "detail": "drsuapi replication calls (DRSBind, DRSCrackNames) from a host that is not a domain controller (only domain controllers replicate the directory: DCSync)", "evidence_uids": ["Csbhv48mZDtKipMY7"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "DC01"}], "case_id": "HUNT-001"}, {"score": 70.0, "severity": "medium", "title": "WS-01: ML anomaly only", "tactics": [], "kill_chain": false, "hosts": [{"ip": "10.77.0.101", "name": "WS-01", "role": "workstation", "score": 70.0, "ml_risk": 100.0, "hunt_score": 0.0, "shap": [{"feature": "nxdomain_names", "text": "failed DNS names", "value": 3.0, "baseline_median": 1.0, "contribution": 1.9631, "explanation": "failed DNS names = 3 (this host usually 1)"}, {"feature": "max_ext_duration_h", "text": "longest external connection (h)", "value": 1.2709167268541125e-05, "baseline_median": 9.788076082865397e-06, "contribution": 1.8618, "explanation": "longest external connection (h) = 0.00 (this host usually 0.00)"}], "features": {"internal_fanout": 2.0, "failed_internal_ratio": 0.4666666666666667, "ntlm_dst": 1.0, "tgs_services": 2.0, "max_ext_duration_h": 1.2709167268541125e-05, "nxdomain_names": 3.0, "nx_randomness": 2.587306415391376}}], "touched_hosts": [], "attack_path": [], "findings": [], "case_id": "HUNT-002"}], "touched_total": 4, "day": "2026-11-26"}, T={"HUNT-001": {"assessment": "likely_malicious", "confidence": "high", "headline": "WS-04 looks compromised: C2 beacon/new domain/tunnel/DGA + lateral movement to 2 hosts + DCSync", "summary": "WS-04 shows command-and-control traffic (beaconing, new domain + tls client fingerprint, long-lived external connection, dga: burst of random-looking failed lookups); lateral movement from WS-04 to FS01, WS-02; credential theft activity (Kerberoasting, NTLM fan-out with one account, DCSync from a non-DC). 10 hunt hits over 2 hosts. ML agrees: WS-04 is 95/100 unusual for itself (longest external connection (h) = 0.07 (this host usually 0.00)).", "attack_story": ["14:18 WS-04 \u2192 cdn-update-check.online: Beaconing (T1071.001)", "14:18 WS-04 \u2192 cdn-update-check.online: New domain + TLS client fingerprint (T1071.001)", "14:19 WS-04 \u2192 9 hosts: Internal sweep of SMB/RPC/RDP ports (T1046)", "14:19 WS-04 \u2192 c2: Long-lived external connection (T1572)", "14:19 WS-04 \u2192 56 domains: DGA: burst of random-looking failed lookups (T1568.002)", "14:20 WS-04 \u2192 DC (KDC): Kerberoasting (T1558.003)", "14:20 WS-04 \u2192 6 hosts: NTLM fan-out with one account (T1550.002)", "14:20 WS-04 \u2192 WS-02: Admin share + remote service (T1021.002)", "14:21 WS-04 \u2192 FS01: Admin share + remote service (T1021.002)", "14:21 WS-04 \u2192 DC01: DCSync from a non-DC (T1003.006)"], "evidence": [{"claim": "drsuapi replication calls (DRSBind, DRSCrackNames) from a host that is not a domain controller (only domain controllers replicate the directory: DCSync)", "source": "LM-07 \u00b7 uid Csbhv48mZDtKipMY7"}, {"claim": "38 connections to cdn-update-check.online (10.77.0.250) every ~8s, timing 0.88, payload size 1.00, active 100% of the day (beacon score 0.96)", "source": "C2-01 \u00b7 uid CkasKa3PMKv19IIui7"}, {"claim": "mapped \\\\10.77.0.102\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)", "source": "LM-01 \u00b7 uid Ci6HgxHWWmKSjGIu1"}, {"claim": "mapped \\\\10.77.0.20\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)", "source": "LM-01 \u00b7 uid CXFAd1SsnZ1h3HxS5"}, {"claim": "6 RC4 service tickets in 0.2 min, e.g. MSSQLSvc/sql.corp.lab:1433, MSSQLSvc/web.corp.lab:1433, MSSQLSvc/backup.corp.lab:1433", "source": "LM-06 \u00b7 uid CTcQep4HiAxvxncDM1"}], "benign_explanations": ["an IT admin using PsExec/RDP during an incident or migration (no change ticket found in the case data)"], "next_steps": ["Isolate WS-04 in EDR and capture memory before reboot", "Treat the domain as compromised: DCSync means password hashes (possibly krbtgt) were read. Plan a double krbtgt reset", "Disable / reset accounts seen in the activity: adm_it, s ssl.log, so domain novelty only)", "Rotate passwords of the kerberoasted service accounts and move them to AES-only / gMSA", "Block cdn-update-check.online, c2 at the proxy/firewall and search all hosts for the same domain/IP/JA3", "Check the touched hosts for the dropped service binary / scheduled task: DC01, WS-01, WS-03, WS-05"], "generated_by": "offline template (no LLM called)", "prompt_chars": 15549}, "HUNT-002": {"assessment": "suspicious", "confidence": "low", "headline": "WS-01 behaves unusually for itself, but no hunt matched", "summary": "ML risk 100/100 compared with this host's own baseline. Top reasons: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00). No known lateral-movement or C2 pattern fired, so this is a lead to check, not an alert.", "attack_story": [], "evidence": [{"claim": "failed DNS names = 3 (this host usually 1)", "source": "SHAP"}, {"claim": "longest external connection (h) = 0.00 (this host usually 0.00)", "source": "SHAP"}], "benign_explanations": ["new software or a changed user routine", "small deviations on a quiet host"], "next_steps": ["Look at WS-01's connections for the top SHAP feature", "Mark FP if it is explained: the model learns from it"], "generated_by": "offline template (no LLM called)", "prompt_chars": 432}}, LIVE=false, QA={"What abnormal behaviour happened on the network today?": {"answer": "7 hosts scored, 16 hunt hits (6 suppressed as known admin behaviour).\n[HUNT-001] critical WS-04: Beaconing (regular timing + same-size payloads) (T1071.001) WS-04 -> cdn-update-check.online; New domain + TLS client fingerprint (JA3) never seen (T1071.001) WS-04 -> cdn-update-check.online; Internal sweep of SMB/RPC/RDP ports (T1046) WS-04 -> 9 hosts; Long-lived external connection (T1572) WS-04 -> c2; DGA: burst of random-looking failed lookups (T1568.002) WS-04 -> 56 domains; Kerberoasting (RC4 service tickets for many SPNs) (T1558.003) WS-04 -> DC (KDC). Why: longest external connection (h) = 0.07 (this host usually 0.00); failed DNS names = 3 (this host usually 2).\n[HUNT-002] medium WS-01: ML anomaly only. Why: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00).", "model": "template (no LLM)", "judge": {"verdict": "n/a", "reason": "judge model gemma3:4b not available"}, "latency_s": null}, "Which hosts should I investigate first, and why did the model flag them?": {"answer": "7 hosts scored, 16 hunt hits (6 suppressed as known admin behaviour).\n[HUNT-001] critical WS-04: Beaconing (regular timing + same-size payloads) (T1071.001) WS-04 -> cdn-update-check.online; New domain + TLS client fingerprint (JA3) never seen (T1071.001) WS-04 -> cdn-update-check.online; Internal sweep of SMB/RPC/RDP ports (T1046) WS-04 -> 9 hosts; Long-lived external connection (T1572) WS-04 -> c2; DGA: burst of random-looking failed lookups (T1568.002) WS-04 -> 56 domains; Kerberoasting (RC4 service tickets for many SPNs) (T1558.003) WS-04 -> DC (KDC). Why: longest external connection (h) = 0.07 (this host usually 0.00); failed DNS names = 3 (this host usually 2).\n[HUNT-002] medium WS-01: ML anomaly only. Why: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00).", "model": "template (no LLM)", "judge": {"verdict": "n/a", "reason": "judge model gemma3:4b not available"}, "latency_s": null}, "Is there any sign of credential theft or lateral movement?": {"answer": "7 hosts scored, 16 hunt hits (6 suppressed as known admin behaviour).\n[HUNT-001] critical WS-04: Beaconing (regular timing + same-size payloads) (T1071.001) WS-04 -> cdn-update-check.online; New domain + TLS client fingerprint (JA3) never seen (T1071.001) WS-04 -> cdn-update-check.online; Internal sweep of SMB/RPC/RDP ports (T1046) WS-04 -> 9 hosts; Long-lived external connection (T1572) WS-04 -> c2; DGA: burst of random-looking failed lookups (T1568.002) WS-04 -> 56 domains; Kerberoasting (RC4 service tickets for many SPNs) (T1558.003) WS-04 -> DC (KDC). Why: longest external connection (h) = 0.07 (this host usually 0.00); failed DNS names = 3 (this host usually 2).\n[HUNT-002] medium WS-01: ML anomaly only. Why: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00).", "model": "template (no LLM)", "judge": {"verdict": "n/a", "reason": "judge model gemma3:4b not available"}, "latency_s": null}}, MET={"detection": {"techniques_detected": 8, "techniques_total": 10, "per_technique": [{"technique": "C2 beaconing", "hunt": "C2-01", "detected": true, "evidence": "38 connections to cdn-update-check.online (10.77.0.250) every ~8s, timing 0.88, payload size 1.00, active 100% of the day (beacon score 0.96)"}, {"technique": "Long-lived C2 tunnel", "hunt": "C2-02", "detected": true, "evidence": "0.1h connection to 10.77.0.250:8443, only 0.0 MB out / 0.0 MB in (interactive, not a download)"}, {"technique": "DGA lookups", "hunt": "C2-03", "detected": true, "evidence": "56 distinct random-looking names that did not resolve, e.g. aeurnuyjjnzg.info, aiglrudtfljvcuvf.info, akqteqtrfbgllt.info (domain generation algorithm)"}, {"technique": "Internal port sweep", "hunt": "LM-08", "detected": true, "evidence": "66 connections to 9 internal hosts on ports [135, 445, 3389], 58% failed"}, {"technique": "Kerberoasting", "hunt": "LM-06", "detected": true, "evidence": "6 RC4 service tickets in 0.2 min, e.g. MSSQLSvc/sql.corp.lab:1433, MSSQLSvc/web.corp.lab:1433, MSSQLSvc/backup.corp.lab:1433"}, {"technique": "PsExec-style remote service", "hunt": "LM-01", "detected": true, "evidence": "mapped \\\\10.77.0.102\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)"}, {"technique": "DCSync", "hunt": "LM-07", "detected": true, "evidence": "drsuapi replication calls (DRSBind, DRSCrackNames) from a host that is not a domain controller (only domain controllers replicate the directory: DCSync)"}, {"technique": "Pass-the-hash NTLM fan-out", "hunt": "LM-05", "detected": true, "evidence": "NTLM logons as 'adm_it' to 6 hosts in 2 min (this host normally uses Kerberos)"}, {"technique": "WMI remote exec attempt", "hunt": "LM-02", "detected": false, "evidence": "no network evidence (the RPC was refused before Zeek could log it)"}, {"technique": "Remote scheduled task attempt", "hunt": "LM-03", "detected": false, "evidence": "no network evidence (the RPC was refused before Zeek could log it)"}], "findings_total_unsuppressed": 10, "findings_true": 10, "finding_precision": 1.0, "host_alerts": ["WS-04"], "host_precision": 1.0, "host_recall": 1.0, "compromised_case_rank": 1, "suppressed_known_admin": 6, "gold_hosts": ["DC01", "FS01", "WS-02", "WS-04"], "gold_techniques": ["beaconing", "c2_tunnel", "dcsync", "dga", "kerberoasting", "pass_the_hash", "psexec", "sweep"]}, "llm_short": "qwen3", "verdict": "faithfulness"};
+const D={"model": "Isolation Forest", "hunt_day": "/tmp/claude-0/-home-user/9472cb33-b42f-5c7a-8bc9-6256b33946be/scratchpad/logs/attack-day", "hosts_scored": 7, "findings_total": 16, "findings_suppressed": 6, "cases": [{"score": 100.0, "severity": "critical", "title": "WS-04: DCSync from a non-DC, Beaconing, Admin share + remote service +6 more", "tactics": ["Command and Control", "Credential Access", "Discovery", "Lateral Movement"], "kill_chain": true, "hosts": [{"ip": "10.77.0.104", "name": "WS-04", "role": "workstation", "score": 99.0, "ml_risk": 95.2, "hunt_score": 95.0, "features": {"internal_fanout": 9.0, "new_internal_pairs": 5.0, "failed_internal_ratio": 0.5757575757575758, "admin_share_maps": 2.0, "remote_service_created": 2.0, "dcsync_calls": 2.0, "ntlm_dst": 6.0, "tgs_services": 8.0, "rc4_tgs_services": 6.0, "max_beacon_score": 0.9632903796384203, "max_ext_duration_h": 0.06668401638666789, "new_domain_new_ja3": 1.0, "nxdomain_names": 3.0, "nx_randomness": 2.587306415391376, "new_domains": 61.0}, "explanations": [{"feature": "max_ext_duration_h", "text": "longest external connection (h)", "value": 0.06668401638666789, "baseline_median": 8.980830510457358e-06, "contribution": 2.6907, "explanation": "longest external connection (h) = 0.07 (this host usually 0.00)"}, {"feature": "nxdomain_names", "text": "failed DNS names", "value": 3.0, "baseline_median": 2.0, "contribution": 0.9804, "explanation": "failed DNS names = 3 (this host usually 2)"}]}, {"ip": "10.77.0.102", "name": "WS-02", "role": "workstation", "score": 63.4, "ml_risk": 90.5, "hunt_score": 0.0, "features": {"internal_fanout": 2.0, "failed_internal_ratio": 0.625, "ntlm_dst": 1.0, "tgs_services": 2.0, "max_ext_duration_h": 1.473334100511339e-05, "nxdomain_names": 1.0, "nx_randomness": 2.587306415391376}, "explanations": [{"feature": "max_ext_duration_h", "text": "longest external connection (h)", "value": 1.473334100511339e-05, "baseline_median": 9.931988186306424e-06, "contribution": 3.1162, "explanation": "longest external connection (h) = 0.00 (this host usually 0.00)"}, {"feature": "failed_internal_ratio", "text": "share of failed internal connections", "value": 0.625, "baseline_median": 0.5555555555555556, "contribution": 0.2863, "explanation": "share of failed internal connections = 0.62 (this host usually 0.56)"}]}], "touched_hosts": [{"ip": "10.77.0.10", "name": "DC01", "role": "domain controller"}, {"ip": "10.77.0.101", "name": "WS-01", "role": "workstation"}, {"ip": "10.77.0.103", "name": "WS-03", "role": "workstation"}, {"ip": "10.77.0.105", "name": "WS-05", "role": "workstation"}], "attack_path": [{"src": "WS-04", "dst": "WS-02", "hunt": "LM-01"}, {"src": "WS-04", "dst": "FS01", "hunt": "LM-01"}, {"src": "WS-04", "dst": "DC01", "hunt": "LM-07"}, {"src": "WS-04", "dst": "DC01", "hunt": "LM-05"}, {"src": "WS-04", "dst": "WS-01", "hunt": "LM-05"}, {"src": "WS-04", "dst": "WS-02", "hunt": "LM-05"}, {"src": "WS-04", "dst": "WS-03", "hunt": "LM-05"}, {"src": "WS-04", "dst": "WS-05", "hunt": "LM-05"}, {"src": "WS-04", "dst": "FS01", "hunt": "LM-05"}], "findings": [{"hunt": "C2-01", "name": "Beaconing (regular timing + same-size payloads)", "tactic": "Command and Control", "attack": "T1071.001, T1573", "severity": 91, "src": "10.77.0.104", "dst": "cdn-update-check.online", "count": 38, "first_ts": 1795702737.932049, "last_ts": 1795703035.791492, "detail": "38 connections to cdn-update-check.online (10.77.0.250) every ~8s, timing 0.88, payload size 1.00, active 100% of the day (beacon score 0.96)", "evidence_uids": ["CkasKa3PMKv19IIui7", "CXWV5c3dy8GA3oVWZk", "CiGu0L2yyD0mHNmqpl", "CFdsFB1QhBTMhmCE6l", "C2lKCJGwyxt1WI022", "C0xc6ENyiPc5eqR47", "Cb3KV33YgMv3xSc15", "CGNdFZ1WRhmdAWrnqd", "CserFE2YMkeZAjj8vf", "CeuoPB0dGzj9XRoOd", "CYwU8k2r5ZQP84tQn4", "C6I5m93qTA2IqK3hV9", "CiWrIc2o1zfsGEcbrb", "CVEjzz18bmADlBIj3g", "CPRess1QQq24Ei2dlj", "C9yqwX3u58KKjil1nk", "CEmjvnonUDIy0GyN3", "CMvP9f4YO84nRhY8R3", "Cy2Gbk1HlPl6o4o4bh", "Cit9yd2xgOg0flpOHb", "C7dSJW3M1qKVOOkXZ9", "Ceuxk24jwLdkKSNnk", "CZTXpj3xSMGqadOEo", "Cgpue41WZoJCOGWomh", "Cl0F7j3FfdsxnKpxuh"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "cdn-update-check.online"}, {"hunt": "C2-04", "name": "New domain + TLS client fingerprint (JA3) never seen", "tactic": "Command and Control", "attack": "T1071.001", "severity": 45, "src": "10.77.0.104", "dst": "cdn-update-check.online", "count": 38, "first_ts": 1795702737.932049, "last_ts": 1795703035.791492, "detail": "first time anyone here reached cdn-update-check.online, (no JA3 in this sensor's ssl.log, so domain novelty only)", "evidence_uids": ["CkasKa3PMKv19IIui7", "CXWV5c3dy8GA3oVWZk", "CiGu0L2yyD0mHNmqpl", "CFdsFB1QhBTMhmCE6l", "C2lKCJGwyxt1WI022", "C0xc6ENyiPc5eqR47", "Cb3KV33YgMv3xSc15", "CGNdFZ1WRhmdAWrnqd", "CserFE2YMkeZAjj8vf", "CeuoPB0dGzj9XRoOd", "CYwU8k2r5ZQP84tQn4", "C6I5m93qTA2IqK3hV9", "CiWrIc2o1zfsGEcbrb", "CVEjzz18bmADlBIj3g", "CPRess1QQq24Ei2dlj", "C9yqwX3u58KKjil1nk", "CEmjvnonUDIy0GyN3", "CMvP9f4YO84nRhY8R3", "Cy2Gbk1HlPl6o4o4bh", "Cit9yd2xgOg0flpOHb", "C7dSJW3M1qKVOOkXZ9", "Ceuxk24jwLdkKSNnk", "CZTXpj3xSMGqadOEo", "Cgpue41WZoJCOGWomh", "Cl0F7j3FfdsxnKpxuh"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "cdn-update-check.online"}, {"hunt": "LM-08", "name": "Internal sweep of SMB/RPC/RDP ports", "tactic": "Discovery", "attack": "T1046, T1135", "severity": 55, "src": "10.77.0.104", "dst": "9 hosts", "count": 66, "first_ts": 1795702741.510876, "last_ts": 1795703021.695131, "detail": "66 connections to 9 internal hosts on ports [135, 445, 3389], 58% failed", "evidence_uids": ["C0r48I3QCR7s2QpOB8", "CZIxW73KcwSeGJx9y6", "CgjLgC1qOMGy7ic2P7", "Cv00r621FcRYEVfPSd", "CQ387f40B724aiUhvc", "CiRolD1yFUwVHwYRPg", "CjCcxd3b9dnZhVnvqg", "Cn7tO72WipfehOO55c", "CdTs98lentPnwel62", "CP3zpM34xmChPjFJEd", "C7PK8m1G9IV8yefvPb", "CGk39Vjnwy27FOp38", "CZyRxo4yG9z2ANCKuf", "CB4tCy1ToC43X2VZXc", "CD5fLDTHT61rUc3O3", "C9AdnA46u2ZeWinxb4", "CPTinh1XdueDbrGRv2", "CCo86Q33U6gMJLGUy3", "CRIHkx3dAwyOJnUsA2", "CiT7Da2OCmWC3Nvxf1", "CxNtssQNNXB1aqSk3", "CXNxdt3r248QT5xQi5", "CqKXX92JyYp4YzDv7", "CGRiKieKuizEzEJPk", "CSecTv2BJVoASzi3wc"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "9 hosts"}, {"hunt": "C2-02", "name": "Long-lived external connection", "tactic": "Command and Control", "attack": "T1572, T1571", "severity": 55, "src": "10.77.0.104", "dst": "10.77.0.250", "count": 1, "first_ts": 1795702742.941169, "last_ts": 1795702742.941169, "detail": "0.1h connection to 10.77.0.250:8443, only 0.0 MB out / 0.0 MB in (interactive, not a download)", "evidence_uids": ["CoaxrG4TmeNTquqsVh"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "c2"}, {"hunt": "C2-03", "name": "DGA: burst of random-looking failed lookups", "tactic": "Command and Control", "attack": "T1568.002", "severity": 70, "src": "10.77.0.104", "dst": "56 domains", "count": 56, "first_ts": 1795702751.363214, "last_ts": 1795702999.85546, "detail": "56 distinct random-looking names that did not resolve, e.g. aeurnuyjjnzg.info, aiglrudtfljvcuvf.info, akqteqtrfbgllt.info (domain generation algorithm)", "evidence_uids": ["C8jPbn3iZK5QIXNVLd", "Cu7EVY1FviPD0g76m", "CnOzcy4powMH5aR6sg", "CHjsCDEh2P6erqVrj", "Cqbjdc4drmomDJRGRb", "CYzTBa4lQRr8hlqVTj", "CMXpy2cGjQ4vsfirl", "Ca8ht52BT0OEwWoTB1", "CnjLJA3FBIuzRMHFU1", "C0gDEu2ijLIqzsVZM3", "CILmuL3stNoqTFYRn9", "CVZGsE6nbK4zHGXa4", "CaVV3w1c18NdwDAi6k", "CGuVVfN5Trc0q0q5b", "CZdzs91Kebud92zwX", "CLlOAc7PcXFMuxA25", "CxdrNIiQv8alXebId", "C9vUtR1hXq5U6Wdyya", "CTv1mF39TN7eT1A6Pe", "CUCyOJ1pNwZkDgWESk", "Cq06G23xanL92QkYye", "CuqFFd2WaS0YTq9OZe", "CRF10x1TAIyPIwKCo1", "CHptjM1Tjex0und5O1", "C6Kcib3voBrq1j81pl"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "56 domains"}, {"hunt": "LM-06", "name": "Kerberoasting (RC4 service tickets for many SPNs)", "tactic": "Credential Access", "attack": "T1558.003", "severity": 80, "src": "10.77.0.104", "dst": "DC (KDC)", "count": 6, "first_ts": 1795702827.952569, "last_ts": 1795702839.049429, "detail": "6 RC4 service tickets in 0.2 min, e.g. MSSQLSvc/sql.corp.lab:1433, MSSQLSvc/web.corp.lab:1433, MSSQLSvc/backup.corp.lab:1433", "evidence_uids": ["CTcQep4HiAxvxncDM1", "C3OFrr4j7JvWQy9fef", "CU5jbg344nvplfW4M1", "Cvzvkf1hZg58xCVT8b", "CxYszw8hlVjleLRG4", "CkxYmrsENtUVU5l5h"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "DC (KDC)"}, {"hunt": "LM-05", "name": "NTLM fan-out with one account (pass-the-hash)", "tactic": "Lateral Movement", "attack": "T1550.002", "severity": 75, "src": "10.77.0.104", "dst": "6 hosts", "count": 10, "first_ts": 1795702858.006819, "last_ts": 1795702957.938713, "detail": "NTLM logons as 'adm_it' to 6 hosts in 2 min (this host normally uses Kerberos)", "evidence_uids": ["Ci6HgxHWWmKSjGIu1", "CXFAd1SsnZ1h3HxS5", "C71Skh4hmfPefCkZc9", "Csbhv48mZDtKipMY7", "Cmyb4x3IigSJKN5cBl", "C4542t3MrjrTnoZeVb", "CUugdq4EXiVovVT0fh", "CaLrRw1bmssZi2SpWg", "CIkNvzdc3Oya2ndyg", "CpsV9h34q3zwQwsppl"], "targets": ["10.77.0.10", "10.77.0.101", "10.77.0.102", "10.77.0.103", "10.77.0.105", "10.77.0.20"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "6 hosts"}, {"hunt": "LM-01", "name": "Admin share + remote service (PsExec style)", "tactic": "Lateral Movement", "attack": "T1021.002, T1569.002", "severity": 85, "src": "10.77.0.104", "dst": "10.77.0.102", "count": 2, "first_ts": 1795702858.01118, "last_ts": 1795702858.02075, "detail": "mapped \\\\10.77.0.102\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)", "evidence_uids": ["Ci6HgxHWWmKSjGIu1"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "WS-02"}, {"hunt": "LM-01", "name": "Admin share + remote service (PsExec style)", "tactic": "Lateral Movement", "attack": "T1021.002, T1569.002", "severity": 85, "src": "10.77.0.104", "dst": "10.77.0.20", "count": 2, "first_ts": 1795702863.037772, "last_ts": 1795702863.251701, "detail": "mapped \\\\10.77.0.20\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)", "evidence_uids": ["CXFAd1SsnZ1h3HxS5"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "FS01"}, {"hunt": "LM-07", "name": "DCSync from a non-DC", "tactic": "Credential Access", "attack": "T1003.006", "severity": 95, "src": "10.77.0.104", "dst": "10.77.0.10", "count": 2, "first_ts": 1795702888.100845, "last_ts": 1795702888.10729, "detail": "drsuapi replication calls (DRSBind, DRSCrackNames) from a host that is not a domain controller (only domain controllers replicate the directory: DCSync)", "evidence_uids": ["Csbhv48mZDtKipMY7"], "suppressed": false, "suppressed_reason": "", "src_name": "WS-04", "dst_name": "DC01"}], "case_id": "HUNT-001"}, {"score": 70.0, "severity": "medium", "title": "WS-01: ML anomaly only", "tactics": [], "kill_chain": false, "hosts": [{"ip": "10.77.0.101", "name": "WS-01", "role": "workstation", "score": 70.0, "ml_risk": 100.0, "hunt_score": 0.0, "features": {"internal_fanout": 2.0, "failed_internal_ratio": 0.4666666666666667, "ntlm_dst": 1.0, "tgs_services": 2.0, "max_ext_duration_h": 1.2709167268541125e-05, "nxdomain_names": 3.0, "nx_randomness": 2.587306415391376}, "explanations": [{"feature": "nxdomain_names", "text": "failed DNS names", "value": 3.0, "baseline_median": 1.0, "contribution": 1.9631, "explanation": "failed DNS names = 3 (this host usually 1)"}, {"feature": "max_ext_duration_h", "text": "longest external connection (h)", "value": 1.2709167268541125e-05, "baseline_median": 9.788076082865397e-06, "contribution": 1.8618, "explanation": "longest external connection (h) = 0.00 (this host usually 0.00)"}]}], "touched_hosts": [], "attack_path": [], "findings": [], "case_id": "HUNT-002"}], "touched_total": 4, "day": "2026-11-26"}, T={"HUNT-001": {"assessment": "likely_malicious", "confidence": "high", "headline": "WS-04 looks compromised: C2 beacon/new domain/tunnel/DGA + lateral movement to 2 hosts + DCSync", "summary": "WS-04 shows command-and-control traffic (beaconing, new domain + tls client fingerprint, long-lived external connection, dga: burst of random-looking failed lookups); lateral movement from WS-04 to FS01, WS-02; credential theft activity (Kerberoasting, NTLM fan-out with one account, DCSync from a non-DC). 10 hunt hits over 2 hosts. ML agrees: WS-04 is 95/100 unusual for itself (longest external connection (h) = 0.07 (this host usually 0.00)).", "attack_story": ["14:18 WS-04 \u2192 cdn-update-check.online: Beaconing (T1071.001)", "14:18 WS-04 \u2192 cdn-update-check.online: New domain + TLS client fingerprint (T1071.001)", "14:19 WS-04 \u2192 9 hosts: Internal sweep of SMB/RPC/RDP ports (T1046)", "14:19 WS-04 \u2192 c2: Long-lived external connection (T1572)", "14:19 WS-04 \u2192 56 domains: DGA: burst of random-looking failed lookups (T1568.002)", "14:20 WS-04 \u2192 DC (KDC): Kerberoasting (T1558.003)", "14:20 WS-04 \u2192 6 hosts: NTLM fan-out with one account (T1550.002)", "14:20 WS-04 \u2192 WS-02: Admin share + remote service (T1021.002)", "14:21 WS-04 \u2192 FS01: Admin share + remote service (T1021.002)", "14:21 WS-04 \u2192 DC01: DCSync from a non-DC (T1003.006)"], "evidence": [{"claim": "drsuapi replication calls (DRSBind, DRSCrackNames) from a host that is not a domain controller (only domain controllers replicate the directory: DCSync)", "source": "LM-07 \u00b7 uid Csbhv48mZDtKipMY7"}, {"claim": "38 connections to cdn-update-check.online (10.77.0.250) every ~8s, timing 0.88, payload size 1.00, active 100% of the day (beacon score 0.96)", "source": "C2-01 \u00b7 uid CkasKa3PMKv19IIui7"}, {"claim": "mapped \\\\10.77.0.102\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)", "source": "LM-01 \u00b7 uid Ci6HgxHWWmKSjGIu1"}, {"claim": "mapped \\\\10.77.0.20\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)", "source": "LM-01 \u00b7 uid CXFAd1SsnZ1h3HxS5"}, {"claim": "6 RC4 service tickets in 0.2 min, e.g. MSSQLSvc/sql.corp.lab:1433, MSSQLSvc/web.corp.lab:1433, MSSQLSvc/backup.corp.lab:1433", "source": "LM-06 \u00b7 uid CTcQep4HiAxvxncDM1"}], "benign_explanations": ["an IT admin using PsExec/RDP during an incident or migration (no change ticket found in the case data)"], "next_steps": ["Isolate WS-04 in EDR and capture memory before reboot", "Treat the domain as compromised: DCSync means password hashes (possibly krbtgt) were read. Plan a double krbtgt reset", "Disable / reset accounts seen in the activity: adm_it, s ssl.log, so domain novelty only)", "Rotate passwords of the kerberoasted service accounts and move them to AES-only / gMSA", "Block cdn-update-check.online, c2 at the proxy/firewall and search all hosts for the same domain/IP/JA3", "Check the touched hosts for the dropped service binary / scheduled task: DC01, WS-01, WS-03, WS-05"], "generated_by": "offline template (no LLM called)", "prompt_chars": 15549}, "HUNT-002": {"assessment": "suspicious", "confidence": "low", "headline": "WS-01 behaves unusually for itself, but no hunt matched", "summary": "ML risk 100/100 compared with this host's own baseline. Top reasons: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00). No known lateral-movement or C2 pattern fired, so this is a lead to check, not an alert.", "attack_story": [], "evidence": [{"claim": "failed DNS names = 3 (this host usually 1)", "source": "Explainability"}, {"claim": "longest external connection (h) = 0.00 (this host usually 0.00)", "source": "Explainability"}], "benign_explanations": ["new software or a changed user routine", "small deviations on a quiet host"], "next_steps": ["Look at WS-01's connections for the top explanation feature", "Mark FP if it is explained: the model learns from it"], "generated_by": "offline template (no LLM called)", "prompt_chars": 432}}, LIVE=false, QA={"What abnormal behaviour happened on the network today?": {"answer": "7 hosts scored, 16 hunt hits (6 suppressed as known admin behaviour).\n[HUNT-001] critical WS-04: Beaconing (regular timing + same-size payloads) (T1071.001) WS-04 -> cdn-update-check.online; New domain + TLS client fingerprint (JA3) never seen (T1071.001) WS-04 -> cdn-update-check.online; Internal sweep of SMB/RPC/RDP ports (T1046) WS-04 -> 9 hosts; Long-lived external connection (T1572) WS-04 -> c2; DGA: burst of random-looking failed lookups (T1568.002) WS-04 -> 56 domains; Kerberoasting (RC4 service tickets for many SPNs) (T1558.003) WS-04 -> DC (KDC). Why: longest external connection (h) = 0.07 (this host usually 0.00); failed DNS names = 3 (this host usually 2).\n[HUNT-002] medium WS-01: ML anomaly only. Why: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00).", "model": "template (no LLM)", "judge": {"verdict": "n/a", "reason": "judge model gemma3:4b not available"}, "latency_s": null}, "Which hosts should I investigate first, and why did the model flag them?": {"answer": "7 hosts scored, 16 hunt hits (6 suppressed as known admin behaviour).\n[HUNT-001] critical WS-04: Beaconing (regular timing + same-size payloads) (T1071.001) WS-04 -> cdn-update-check.online; New domain + TLS client fingerprint (JA3) never seen (T1071.001) WS-04 -> cdn-update-check.online; Internal sweep of SMB/RPC/RDP ports (T1046) WS-04 -> 9 hosts; Long-lived external connection (T1572) WS-04 -> c2; DGA: burst of random-looking failed lookups (T1568.002) WS-04 -> 56 domains; Kerberoasting (RC4 service tickets for many SPNs) (T1558.003) WS-04 -> DC (KDC). Why: longest external connection (h) = 0.07 (this host usually 0.00); failed DNS names = 3 (this host usually 2).\n[HUNT-002] medium WS-01: ML anomaly only. Why: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00).", "model": "template (no LLM)", "judge": {"verdict": "n/a", "reason": "judge model gemma3:4b not available"}, "latency_s": null}, "Is there any sign of credential theft or lateral movement?": {"answer": "7 hosts scored, 16 hunt hits (6 suppressed as known admin behaviour).\n[HUNT-001] critical WS-04: Beaconing (regular timing + same-size payloads) (T1071.001) WS-04 -> cdn-update-check.online; New domain + TLS client fingerprint (JA3) never seen (T1071.001) WS-04 -> cdn-update-check.online; Internal sweep of SMB/RPC/RDP ports (T1046) WS-04 -> 9 hosts; Long-lived external connection (T1572) WS-04 -> c2; DGA: burst of random-looking failed lookups (T1568.002) WS-04 -> 56 domains; Kerberoasting (RC4 service tickets for many SPNs) (T1558.003) WS-04 -> DC (KDC). Why: longest external connection (h) = 0.07 (this host usually 0.00); failed DNS names = 3 (this host usually 2).\n[HUNT-002] medium WS-01: ML anomaly only. Why: failed DNS names = 3 (this host usually 1); longest external connection (h) = 0.00 (this host usually 0.00).", "model": "template (no LLM)", "judge": {"verdict": "n/a", "reason": "judge model gemma3:4b not available"}, "latency_s": null}}, MET={"detection": {"techniques_detected": 8, "techniques_total": 10, "per_technique": [{"technique": "C2 beaconing", "hunt": "C2-01", "detected": true, "evidence": "38 connections to cdn-update-check.online (10.77.0.250) every ~8s, timing 0.88, payload size 1.00, active 100% of the day (beacon score 0.96)"}, {"technique": "Long-lived C2 tunnel", "hunt": "C2-02", "detected": true, "evidence": "0.1h connection to 10.77.0.250:8443, only 0.0 MB out / 0.0 MB in (interactive, not a download)"}, {"technique": "DGA lookups", "hunt": "C2-03", "detected": true, "evidence": "56 distinct random-looking names that did not resolve, e.g. aeurnuyjjnzg.info, aiglrudtfljvcuvf.info, akqteqtrfbgllt.info (domain generation algorithm)"}, {"technique": "Internal port sweep", "hunt": "LM-08", "detected": true, "evidence": "66 connections to 9 internal hosts on ports [135, 445, 3389], 58% failed"}, {"technique": "Kerberoasting", "hunt": "LM-06", "detected": true, "evidence": "6 RC4 service tickets in 0.2 min, e.g. MSSQLSvc/sql.corp.lab:1433, MSSQLSvc/web.corp.lab:1433, MSSQLSvc/backup.corp.lab:1433"}, {"technique": "PsExec-style remote service", "hunt": "LM-01", "detected": true, "evidence": "mapped \\\\10.77.0.102\\ADMIN$, svcctl (OpenSCManagerW) - remote service control over the admin share (PsExec pattern)"}, {"technique": "DCSync", "hunt": "LM-07", "detected": true, "evidence": "drsuapi replication calls (DRSBind, DRSCrackNames) from a host that is not a domain controller (only domain controllers replicate the directory: DCSync)"}, {"technique": "Pass-the-hash NTLM fan-out", "hunt": "LM-05", "detected": true, "evidence": "NTLM logons as 'adm_it' to 6 hosts in 2 min (this host normally uses Kerberos)"}, {"technique": "WMI remote exec attempt", "hunt": "LM-02", "detected": false, "evidence": "no network evidence (the RPC was refused before Zeek could log it)"}, {"technique": "Remote scheduled task attempt", "hunt": "LM-03", "detected": false, "evidence": "no network evidence (the RPC was refused before Zeek could log it)"}], "findings_total_unsuppressed": 10, "findings_true": 10, "finding_precision": 1.0, "host_alerts": ["WS-04"], "host_precision": 1.0, "host_recall": 1.0, "compromised_case_rank": 1, "suppressed_known_admin": 6, "gold_hosts": ["DC01", "FS01", "WS-02", "WS-04"], "gold_techniques": ["beaconing", "c2_tunnel", "dcsync", "dga", "kerberoasting", "pass_the_hash", "psexec", "sweep"]}, "llm_short": "qwen3", "verdict": "faithfulness"};
 const COL={"Lateral Movement":"var(--lm)","Command and Control":"var(--c2)","Credential Access":"var(--cred)","Discovery":"var(--disc)"};
-const SHORT={"Lateral Movement":"Lateral Movement","Command and Control":"C2","Credential Access":"Credential Access","Discovery":"Discovery"};
-const labels={}; let cur=0, curHost=0, filt="all";
+const SHORT={"Lateral Movement":"Lateral movement","Command and Control":"C2","Credential Access":"Credential access","Discovery":"Discovery"};
+const SEVC={critical:"var(--crit)",high:"var(--high)",medium:"var(--med)",low:"var(--low)"};
+const labels={}; let cur=0, curHost=0, filt="all", tab="overview";
 const $=id=>document.getElementById(id);
-const hhmm=ts=>{const h=(ts%86400)/3600;return String(Math.floor(h)).padStart(2,"0")+":"+String(Math.floor(h%1*60)).padStart(2,"0")};
-$("day").textContent=D.day; $("model").textContent=D.model; if(D.llm_model)$("llmname").textContent=D.llm_model; if(D.source)$("src").textContent=D.source;
-const crit=D.cases.filter(c=>c.severity==="critical").length;
-$("kpis").innerHTML=[[D.hosts_scored,"hosts scored today"],[D.findings_total,"hunt hits (12 hunts)"],[D.findings_suppressed,"auto-suppressed (known admin behaviour)"],[D.cases.length,"cases in queue"],[crit,"critical"],[D.touched_total!=null?D.touched_total:"-","hosts the attack reached"]]
- .map(([v,l],i)=>`<div class="kpi"><div class="v" style="${i==4?'color:var(--crit)':''}">${v}</div><div class="l">${l}</div></div>`).join("");
-$("supp").textContent=`${D.findings_suppressed} hits hidden: SCCM01 creates remote services on most baseline days (allow-listed by the baseline, not by hand).`;
-(function(){const S=[
- ["Zeek sensor","9 log types","packets → JSON logs",""],
- ["Feature extraction","per host","conn/dns/ssl/kerberos/smb…",""],
- ["Isolation Forest",(D.hosts_scored!=null?D.hosts_scored+" hosts":"hosts"),"risk score vs the host's own baseline","ml"],
- ["SHAP","top reasons","why each score is high","shap"],
- ["Store",(D.findings_total!=null?D.findings_total+" findings":"findings"),"SQLite · the LLM reads only this",""],
- ["Analyst asks","question","plain language",""],
- ["LLM answer",(MET.llm_short||"qwen3"),"local Ollama · cites finding ids","llm"],
- ["LLM judge",(MET.verdict||"faithfulness"),"a 2nd model grades the answer","llm"]];
- $("flow").innerHTML=S.map((s,i)=>`<div class="stage ${s[3]}"><div class="sn">${s[0]}</div><div class="sv">${s[1]}</div><div class="sd">${s[2]}</div></div>`+(i<S.length-1?'<div class="flowarrow">→</div>':'')).join("");
- const m=MET.detection||{},rb=[];
- if(m.techniques_detected!=null)rb.push(["good",`<b>${m.techniques_detected}/${m.techniques_total}</b> attack techniques detected`]);
- if(m.compromised_case_rank)rb.push(["crit",`compromised host ranked <b>#${m.compromised_case_rank}</b>`]);
- if(m.host_precision!=null)rb.push(["good",`host precision / recall <b>${Math.round(m.host_precision*100)}% / ${Math.round(m.host_recall*100)}%</b>`]);
- if(m.suppressed_known_admin!=null)rb.push(["",`<b>${m.suppressed_known_admin}</b> known-admin hits auto-suppressed`]);
- rb.push(["",`LLM + judge run <b>locally</b> (docker compose · open-source models)`]);
- $("ribbon").innerHTML=rb.map(r=>`<span class="rb ${r[0]}">${r[1]}</span>`).join("")})();
-const HUNTS={"LM-01": ["Admin share + remote service (PsExec style)", "Lateral Movement", "T1021.002, T1569.002", 85], "LM-02": ["Remote WMI / DCOM execution", "Lateral Movement", "T1047, T1021.003", 80], "LM-03": ["Remote scheduled task", "Lateral Movement", "T1053.005", 75], "LM-04": ["Unusual RDP (workstation to workstation, off hours, new pair)", "Lateral Movement", "T1021.001", 60], "LM-05": ["NTLM fan-out with one account (pass-the-hash)", "Lateral Movement", "T1550.002", 75], "LM-06": ["Kerberoasting (RC4 service tickets for many SPNs)", "Credential Access", "T1558.003", 80], "LM-07": ["DCSync from a non-DC", "Credential Access", "T1003.006", 95], "LM-08": ["Internal sweep of SMB/RPC/RDP ports", "Discovery", "T1046, T1135", 55], "C2-01": ["Beaconing (regular timing + same-size payloads)", "Command and Control", "T1071.001, T1573", 75], "C2-02": ["Long-lived external connection", "Command and Control", "T1572, T1571", 55], "C2-03": ["DGA: burst of random-looking failed lookups", "Command and Control", "T1568.002", 70], "C2-04": ["New domain + TLS client fingerprint (JA3) never seen", "Command and Control", "T1071.001", 45]};
-function lib(){const n={};D.cases.forEach(c=>c.findings.forEach(f=>n[f.hunt]=(n[f.hunt]||0)+1));
- $("lib").innerHTML=Object.entries(HUNTS).map(([id,h])=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0;font-size:11.5px">
- <span class="hid" style="background:${COL[h[1]]};color:#04101f;min-width:42px;text-align:center">${id}</span><span style="flex:1;color:${n[id]?'var(--txt)':'var(--mut)'}">${h[0].split(" (")[0]}</span>
- <b style="color:${n[id]?'var(--crit)':'var(--mut)'}">${n[id]||0}</b></div>`).join("")}
-lib();
-function tacticTags(c){return c.tactics.map(t=>`<span class="tag" style="color:${COL[t]};border-color:${COL[t]}">${SHORT[t]}</span>`).join("")}
-function queue(){ $("queue").innerHTML=D.cases.map((c,i)=>({c,i})).filter(({c})=>filt==="all"||c.tactics.includes(filt)).map(({c,i})=>`
- <div class="case ${i==cur?'on':''}" onclick="sel(${i})"><div class="score sev-${c.severity}">${Math.round(c.score)}</div>
- <div style="min-width:0"><div class="t">${c.case_id} · ${c.hosts[0].name}</div><div class="m">${c.title.split(": ").slice(1).join(": ")}</div>
- <div class="tags">${tacticTags(c)}<span class="tag">${c.hosts.length} host${c.hosts.length>1?'s':''}</span>${c.kill_chain?'<span class="tag" style="color:var(--crit);border-color:var(--crit)">kill chain</span>':''}</div></div>
- ${labels[c.case_id]?`<span class="lab" style="background:${labels[c.case_id]=='TP'?'var(--crit)':'var(--low)'};color:#04101f">${labels[c.case_id]}</span>`:''}</div>`).join("") }
-document.querySelectorAll(".tab[data-f]").forEach(t=>t.onclick=()=>{document.querySelectorAll(".tab[data-f]").forEach(x=>x.classList.remove("on"));t.classList.add("on");filt=t.dataset.f;queue()});
-function graph(c){
- const ext=[...new Set(c.findings.filter(f=>["C2-01","C2-02"].includes(f.hunt)).map(f=>f.dst_name))];
- const E=[]; const pth={};
- c.attack_path.forEach(e=>{ if(e.hunt==="LM-05"){(pth[e.src]=pth[e.src]||[]).push(e.dst)} else E.push(e) });
- Object.entries(pth).forEach(([s,d])=>E.push({src:s,dst:`${d.length} hosts`,hunt:"LM-05",cluster:true}));
- const inc={}; E.forEach(e=>{if(["LM-01","LM-02","LM-03","LM-04"].includes(e.hunt))inc[e.dst]=1});
- const hosts=[...new Set(c.hosts.filter(h=>h.hunt_score>0).map(h=>h.name))];
- const roots=hosts.filter(h=>!inc[h]); const lvl={}; roots.forEach(r=>lvl[r]=1);
- for(let k=0;k<4;k++)E.forEach(e=>{if(lvl[e.src]&&!(e.dst in lvl)&&!ext.includes(e.dst))lvl[e.dst]=lvl[e.src]+1});
- ext.forEach(x=>lvl[x]=0); hosts.forEach(h=>{if(!(h in lvl))lvl[h]=1});
- const cols={}; Object.entries(lvl).forEach(([n,l])=>(cols[l]=cols[l]||[]).push(n));
- const maxL=Math.max(...Object.keys(cols).map(Number)); const pos={};
- Object.entries(cols).forEach(([l,ns])=>ns.forEach((n,i)=>pos[n]={x:50+ (l)*(520/Math.max(1,maxL)), y:(i+1)*360/(ns.length+1), crowd:ns.length>4}));
- const ec=h=>h.startsWith("C2")?"#c77dff":["LM-05","LM-06","LM-07"].includes(h)?"#ff7b54":"#5aa9ff";
- const lines=[...E.map(e=>({...e,c:ec(e.hunt)})), ...ext.map(x=>({src:roots[0]||hosts[0],dst:x,hunt:c.findings.find(f=>f.dst_name===x).hunt,c:"#c77dff"}))];
- let s=`<defs>${["#c77dff","#ff7b54","#5aa9ff"].map((k,i)=>`<marker id="a${i}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="${k}"/></marker>`).join("")}</defs>`;
- const mk={"#c77dff":0,"#ff7b54":1,"#5aa9ff":2};
- lines.forEach(e=>{const a=pos[e.src],b=pos[e.dst]; if(!a||!b)return; const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,r=24;
-  const x1=a.x+dx/L*r,y1=a.y+dy/L*r,x2=b.x-dx/L*r,y2=b.y-dy/L*r;
-  s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${e.c}" stroke-width="2" marker-end="url(#a${mk[e.c]})" opacity=".9"/>`;
-  s+=`<text x="${(x1+x2)/2}" y="${(y1+y2)/2-5}" text-anchor="middle" style="font-size:10px;fill:${e.c};font-weight:700">${e.hunt}</text>`});
- Object.entries(pos).forEach(([n,p])=>{const h=c.hosts.find(x=>x.name===n); const isExt=ext.includes(n); const isCl=/hosts$/.test(n);
-  const fill=isExt?"#2a1840":h&&h.hunt_score>0?"#3a1420":"#16233a"; const st=isExt?"#c77dff":h&&h.hunt_score>0?"#ff4d6d":"#5aa9ff";
-  const label=isExt? n.replace(/^(.{16}).+$/,"$1…"):n;
-  s+=`<circle cx="${p.x}" cy="${p.y}" r="22" fill="${fill}" stroke="${st}" stroke-width="2" ${isCl?'stroke-dasharray="4 3"':''}/>`;
-  s+=`<text x="${p.x}" y="${p.y+4}" text-anchor="middle" style="font-size:${isExt?9:10.5}px;font-weight:700">${isExt?'C2':isCl?n.split(' ')[0]:n.replace('WS-','WS‑')}</text>`;
-  s+=`<text x="${p.x}" y="${p.y+36}" text-anchor="middle" style="fill:#8b97b0;font-size:10px">${isExt?label:isCl?'NTLM targets':(h&&!p.crowd?h.role:'')}</text>`});
- if(!lines.length){s+=`<text x="310" y="180" text-anchor="middle" style="fill:#8b97b0">No lateral movement edges: single-host case</text>`}
- $("graph").innerHTML=s }
-function shapPanel(c){
- const hs=c.hosts.filter(h=>h.shap.length).slice(0,4); if(curHost>=hs.length)curHost=0;
- $("htabs").innerHTML=hs.map((h,i)=>`<span class="tab ${i==curHost?'on':''}" onclick="curHost=${i};shapPanel(D.cases[cur])">${h.name} · ${Math.round(h.ml_risk)}</span>`).join("");
- const h=hs[curHost]; if(!h){$("shap").innerHTML='<div class="small">No SHAP reasons</div>';return}
- const mx=Math.max(...h.shap.map(r=>r.contribution));
- $("shap").innerHTML=h.shap.map(r=>`<div class="bar"><div class="n">${r.text}<small>today ${fmt(r.value)} · this host usually ${fmt(r.baseline_median)}</small></div>
-  <div class="track"><div class="fill" style="width:${(100*r.contribution/mx).toFixed(0)}%"></div></div><div class="val">+${r.contribution.toFixed(2)}</div></div>`).join("");
- $("mlnote").innerHTML=`ML risk <b>${h.ml_risk.toFixed(0)}/100</b> = how unusual today is <i>for this host</i> vs its own 5-day baseline. Hunt score ${h.hunt_score.toFixed(0)}.`}
-const fmt=v=>Math.abs(v)<10&&v%1?v.toFixed(2):Math.round(v).toLocaleString();
-function timeline(c){ $("tl").innerHTML=c.findings.map(f=>`<tr><td class="mono">${hhmm(f.first_ts)}</td>
- <td><span class="hid" style="background:${COL[f.tactic]};color:#04101f">${f.hunt}</span></td>
- <td><b>${f.src_name}</b> → ${f.dst_name}</td><td class="mono">${f.attack.split(",")[0]}</td><td>${f.detail}</td><td class="mono">${f.evidence_uids[0]}${f.evidence_uids.length>1?` +${f.evidence_uids.length-1}`:''}</td></tr>`).join("") }
-function tri(c){ const t=T[c.case_id]; if(!t){$("tri").innerHTML="";return}
- const col={likely_malicious:"var(--crit)",suspicious:"var(--high)",likely_benign:"var(--low)"}[t.assessment];
- $("tri").innerHTML=`<h3>LLM triage summary</h3>
- <span class="badge" style="background:${col};color:#04101f">${t.assessment.replace("_"," ").toUpperCase()}</span> <span class="chip">confidence <b>${t.confidence}</b></span>
- <div class="hl">${t.headline}</div><p>${t.summary}</p>
- ${t.attack_story.length?`<div class="sec">Attack story</div><ol>${t.attack_story.slice(0,9).map(s=>`<li>${s}</li>`).join("")}${t.attack_story.length>9?`<li class="small">+${t.attack_story.length-9} more in timeline</li>`:''}</ol>`:''}
- <div class="sec">Evidence (cited)</div><ul>${t.evidence.slice(0,4).map(e=>`<li>${e.claim} <span class="cite">[${e.source}]</span></li>`).join("")}</ul>
- ${t.benign_explanations&&t.benign_explanations.length?`<div class="sec">Could it be benign?</div><ul>${t.benign_explanations.map(s=>`<li>${s}</li>`).join("")}</ul>`:''}
- <div class="sec">Recommended next steps</div><ol>${t.next_steps.slice(0,5).map(s=>`<li>${s}</li>`).join("")}</ol>
- <div class="foot">Generated by <b>${t.generated_by.startsWith("offline")?(D.llm_model||"Ollama")+" (configured)":t.generated_by}</b> · self-hosted, no data leaves the network · evidence pulled from the store by Zeek uid${t.generated_by.startsWith("offline")?` · <i>demo text: ${t.generated_by}</i>`:''}</div>
- <div class="sec">Analyst decision</div>
- <div class="dec"><button class="btn tp ${labels[c.case_id]=='TP'?'on':''}" onclick="mark('TP')">✓ True positive</button><button class="btn fp ${labels[c.case_id]=='FP'?'on':''}" onclick="mark('FP')">✕ False positive</button></div>
- <select id="reason"><option>Reason: confirmed malicious (EDR / host evidence)</option><option>Known admin activity (change ticket)</option><option>Benign software / update agent</option><option>Needs more data</option></select>
- <div class="small" style="margin-top:8px">Labels feed <span class="mono">train_feedback.py</span> → XGBoost re-ranks tomorrow's queue. <a href="#" onclick="exportCSV();return false" style="color:var(--acc)">Export labels.csv</a></div>`}
-function mark(l){labels[D.cases[cur].case_id]=l;tri(D.cases[cur]);queue();
- if(LIVE){const c=D.cases[cur];fetch("/api/label",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({case_id:c.case_id,host:c.hosts[0].name,label:l,reason:($("reason")||{}).value||""})})}}
-const PRESETS=["What abnormal behaviour happened on the network today?","Which hosts should I investigate first, and why did the model flag them?","Is there any sign of credential theft or lateral movement?"];
-$("presets").innerHTML=PRESETS.map(p=>`<span class="tag preset" onclick="$('q').value=this.textContent;askQ()">${p}</span>`).join("");
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const hhmm=ts=>{const h=((ts%86400)+86400)%86400/3600;return String(Math.floor(h)).padStart(2,"0")+":"+String(Math.floor(h%1*60)).padStart(2,"0")};
+const fmt=v=>Math.abs(v)<10&&v%1?v.toFixed(2):Math.round(v).toLocaleString();
+$("day").textContent=D.day; $("model").textContent=D.model; if(D.llm_model)$("llmname").textContent=String(D.llm_model).split(" (")[0]; if(D.source)$("src").textContent=D.source;
+
+/* pipeline strip */
+(function(){const S=[
+ ["Zeek sensor","9 log types","packets → JSON","on"],
+ ["Features","per host","conn/dns/ssl/kerberos",""],
+ ["Isolation Forest",(D.hosts_scored!=null?D.hosts_scored+" hosts":"hosts"),"risk vs own baseline","on"],
+ ["Explainability","top reasons","why the score is high","ex"],
+ ["Store",(D.findings_total!=null?D.findings_total+" findings":"findings"),"LLM reads only this",""],
+ ["Ask","question","plain language",""],
+ ["LLM answer",(MET.llm_short||"qwen3"),"local · cites ids","ai"],
+ ["LLM judge",(MET.verdict||"faithfulness"),"a 2nd model grades","ai"]];
+ $("flow").innerHTML=S.map((s,i)=>`<div class="stg ${s[3]}"><div class="sn">${s[0]}</div><div class="sv">${s[1]}</div><div class="sd">${s[2]}</div></div>`+(i<S.length-1?'<div class="far">→</div>':'')).join("")})();
+
+/* kpis */
+const crit=D.cases.filter(c=>c.severity==="critical").length;
+$("kpis").innerHTML=[[D.hosts_scored,"hosts scored"],[D.findings_total,"hunt hits (12 hunts)"],
+ [D.cases.length,"open cases"],[crit,"critical",1],[D.findings_suppressed,"auto-suppressed"]]
+ .map(([v,l,c])=>`<div class="kpi ${c?'crit':''}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+const m=MET.detection||{},rb=[];
+if(m.techniques_detected!=null)rb.push(["good",`<b>${m.techniques_detected}/${m.techniques_total}</b>&nbsp;attack techniques detected`]);
+if(m.compromised_case_rank)rb.push(["crit",`compromised host ranked&nbsp;<b>#${m.compromised_case_rank}</b>`]);
+if(m.host_precision!=null)rb.push(["good",`host precision / recall&nbsp;<b>${Math.round(m.host_precision*100)}% / ${Math.round(m.host_recall*100)}%</b>`]);
+rb.push(["",`LLM + judge run&nbsp;<b>locally</b>&nbsp;(open-source)`]);
+$("ribbon").innerHTML=rb.map(r=>`<span class="rb ${r[0]}">${r[1]}</span>`).join("");
+
+/* hunt coverage */
+const HUNTS={"LM-01": ["Admin share + remote service (PsExec style)", "Lateral Movement", "T1021.002, T1569.002", 85], "LM-02": ["Remote WMI / DCOM execution", "Lateral Movement", "T1047, T1021.003", 80], "LM-03": ["Remote scheduled task", "Lateral Movement", "T1053.005", 75], "LM-04": ["Unusual RDP (workstation to workstation, off hours, new pair)", "Lateral Movement", "T1021.001", 60], "LM-05": ["NTLM fan-out with one account (pass-the-hash)", "Lateral Movement", "T1550.002", 75], "LM-06": ["Kerberoasting (RC4 service tickets for many SPNs)", "Credential Access", "T1558.003", 80], "LM-07": ["DCSync from a non-DC", "Credential Access", "T1003.006", 95], "LM-08": ["Internal sweep of SMB/RPC/RDP ports", "Discovery", "T1046, T1135", 55], "C2-01": ["Beaconing (regular timing + same-size payloads)", "Command and Control", "T1071.001, T1573", 75], "C2-02": ["Long-lived external connection", "Command and Control", "T1572, T1571", 55], "C2-03": ["DGA: burst of random-looking failed lookups", "Command and Control", "T1568.002", 70], "C2-04": ["New domain + TLS client fingerprint (JA3) never seen", "Command and Control", "T1071.001", 45]};
+(function(){const n={};D.cases.forEach(c=>c.findings.forEach(f=>n[f.hunt]=(n[f.hunt]||0)+1));
+ $("lib").innerHTML=Object.entries(HUNTS).map(([id,h])=>`<div class="librow">
+  <span class="hid" style="background:${COL[h[1]]}">${id}</span>
+  <span style="flex:1;color:${n[id]?'var(--txt2)':'var(--mut2)'}">${h[0].split(" (")[0]}</span>
+  <b style="color:${n[id]?'var(--crit)':'var(--mut2)'}">${n[id]||0}</b></div>`).join("")})();
+
+/* queue */
+function tacticTags(c){return c.tactics.map(t=>`<span class="tag" style="color:${COL[t]};border-color:${COL[t]}">${SHORT[t]}</span>`).join("")}
+function queue(){$("queue").innerHTML=D.cases.map((c,i)=>({c,i})).filter(({c})=>filt==="all"||c.tactics.includes(filt)).map(({c,i})=>`
+ <div class="case ${i==cur?'on':''}" onclick="sel(${i})">
+  <div class="ring sev-${c.severity}">${Math.round(c.score)}</div>
+  <div style="min-width:0"><div class="t">${c.case_id} · ${c.hosts[0].name}</div>
+  <div class="m">${esc(c.title.split(": ").slice(1).join(": "))}</div>
+  <div class="tags">${tacticTags(c)}${c.kill_chain?'<span class="tag" style="color:var(--crit);border-color:var(--crit)">kill chain</span>':''}</div></div>
+  ${labels[c.case_id]?`<span class="lab" style="background:${labels[c.case_id]=='TP'?'var(--crit)':'var(--low)'};color:#06101f">${labels[c.case_id]}</span>`:''}</div>`).join("")}
+$("seg").querySelectorAll("span").forEach(t=>t.onclick=()=>{$("seg").querySelectorAll("span").forEach(x=>x.classList.remove("on"));t.classList.add("on");filt=t.dataset.f;queue()});
+$("supp").textContent=`${D.findings_suppressed} hits hidden — the deployment server creates remote services on most baseline days (learned by the baseline, not allow-listed by hand).`;
+
+/* case header + tabs */
+function sel(i){cur=i;curHost=0;const c=D.cases[i];
+ $("cring").className="ring sev-"+c.severity;$("cring").style.color=SEVC[c.severity];$("cring").textContent=Math.round(c.score);
+ $("cid").textContent=`${c.case_id} · ${c.severity.toUpperCase()} · ${c.hosts.length} host${c.hosts.length>1?'s':''}, ${c.touched_hosts.length} touched`;
+ $("ctitle").textContent=c.title;
+ const order=["Command and Control","Discovery","Credential Access","Lateral Movement"].filter(t=>c.tactics.includes(t));
+ $("chain").innerHTML=order.map(t=>`<span class="pill" style="color:${COL[t]};border-color:${COL[t]}"><b>${SHORT[t]}</b> ${c.findings.filter(f=>f.tactic===t).length}</span>`).join('<span class="arrow">→</span>')
+  +(c.kill_chain?'<span class="pill" style="margin-left:4px;color:var(--mut)">C2 + lateral movement on the same hosts <b style="color:var(--crit)">+5</b></span>':'');
+ queue();renderTab()}
+$("tabrow").querySelectorAll("span").forEach(s=>s.onclick=()=>{tab=s.dataset.t;$("tabrow").querySelectorAll("span").forEach(x=>x.classList.toggle("on",x==s));renderTab()});
+function renderTab(){const c=D.cases[cur];({overview:tri,explain:explPanel,timeline:timeline,graph:graph}[tab]||tri)(c)}
+
+/* overview = triage */
+function tri(c){const t=T[c.case_id];
+ if(!t){$("tabc").innerHTML='<div class="muted">No triage summary for this case.</div>';return}
+ const col={likely_malicious:"var(--crit)",suspicious:"var(--high)",likely_benign:"var(--low)"}[t.assessment]||"var(--mut)";
+ $("tabc").innerHTML=`<div class="tri">
+  <span class="badge" style="background:${col};color:#06101f">${t.assessment.replace("_"," ").toUpperCase()}</span>
+  <span class="chip" style="margin-left:6px">confidence <b>${t.confidence}</b></span>
+  <div class="hl">${esc(t.headline)}</div><p>${esc(t.summary)}</p>
+  ${t.attack_story&&t.attack_story.length?`<div class="sec">Attack story</div><ol>${t.attack_story.slice(0,9).map(s=>`<li>${esc(s)}</li>`).join("")}${t.attack_story.length>9?`<li class="muted">+${t.attack_story.length-9} more (see Timeline)</li>`:''}</ol>`:''}
+  <div class="sec">Evidence (cited)</div><ul>${t.evidence.slice(0,4).map(e=>`<li>${esc(e.claim)} <span class="cite">[${esc(e.source)}]</span></li>`).join("")}</ul>
+  ${t.benign_explanations&&t.benign_explanations.length?`<div class="sec">Could it be benign?</div><ul>${t.benign_explanations.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>`:''}
+  <div class="sec">Recommended next steps</div><ol>${t.next_steps.slice(0,5).map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+  <div class="foot">Written by <b>${t.generated_by&&t.generated_by.startsWith("offline")?(D.llm_model||"Ollama")+" (configured)":esc(t.generated_by||"template")}</b> · self-hosted, no data leaves the network · evidence pulled from the store by Zeek uid${t.generated_by&&t.generated_by.startsWith("offline")?` · <i>demo text: no model pulled yet</i>`:''}</div>
+  <div class="sec">Analyst decision</div>
+  <div class="dec"><button class="bd tp ${labels[c.case_id]=='TP'?'on':''}" onclick="mark('TP')">✓ True positive</button><button class="bd fp ${labels[c.case_id]=='FP'?'on':''}" onclick="mark('FP')">✕ False positive</button></div>
+  <select id="reason"><option>Reason: confirmed malicious (EDR / host evidence)</option><option>Known admin activity (change ticket)</option><option>Benign software / update agent</option><option>Needs more data</option></select>
+  <div class="muted" style="margin-top:9px">Labels feed <span class="mono">train_feedback.py</span> → XGBoost re-ranks tomorrow's queue. <a href="#" onclick="exportCSV();return false">Export labels.csv</a></div></div>`}
+function mark(l){const c=D.cases[cur];labels[c.case_id]=l;renderTab();queue();
+ if(LIVE)fetch("/api/label",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({case_id:c.case_id,host:c.hosts[0].name,label:l,reason:($("reason")||{}).value||""})})}
+
+/* explainability */
+function explPanel(c){const hs=c.hosts.filter(h=>h.explanations&&h.explanations.length).slice(0,4);if(curHost>=hs.length)curHost=0;
+ if(!hs.length){$("tabc").innerHTML='<div class="muted">No model explanation for this case (hunt-only).</div>';return}
+ const h=hs[curHost],mx=Math.max(...h.explanations.map(r=>r.contribution))||1;
+ $("tabc").innerHTML=`<div class="ht">${hs.map((x,i)=>`<span class="${i==curHost?'on':''}" onclick="curHost=${i};explPanel(D.cases[${cur}])">${x.name} · ${Math.round(x.ml_risk)}</span>`).join("")}</div>
+  ${h.explanations.map(r=>`<div class="bar"><div class="n">${esc(r.text)}<small>today ${fmt(r.value)} · this host usually ${fmt(r.baseline_median)}</small></div>
+   <div class="track"><div class="fill" style="width:${(100*r.contribution/mx).toFixed(0)}%"></div></div><div class="val">+${r.contribution.toFixed(2)}</div></div>`).join("")}
+  <div class="note">ML risk <b style="color:var(--txt)">${h.ml_risk.toFixed(0)}/100</b> is how unusual today is <i>for ${h.name}</i> vs its own baseline — not vs other hosts. The explainability layer ranks the features that pushed the score up. Hunt score ${h.hunt_score.toFixed(0)}.</div>`}
+
+/* timeline */
+function timeline(c){$("tabc").innerHTML=`<table><thead><tr><th>Time</th><th>Hunt</th><th>Source → target</th><th>ATT&CK</th><th>What Zeek saw</th><th>Evidence</th></tr></thead><tbody>
+ ${c.findings.map(f=>`<tr><td class="mono">${hhmm(f.first_ts)}</td>
+  <td><span class="hid" style="background:${COL[f.tactic]}">${f.hunt}</span></td>
+  <td><b>${esc(f.src_name)}</b> → ${esc(f.dst_name)}</td><td class="mono">${esc(f.attack.split(",")[0])}</td>
+  <td>${esc(f.detail)}</td><td class="mono">${esc(f.evidence_uids[0]||'')}${f.evidence_uids.length>1?` +${f.evidence_uids.length-1}`:''}</td></tr>`).join("")}
+ </tbody></table>`}
+
+/* attack path */
+function graph(c){$("tabc").innerHTML='<svg id="g" width="100%" height="380" viewBox="0 0 640 380"></svg>';
+ const ext=[...new Set(c.findings.filter(f=>["C2-01","C2-02"].includes(f.hunt)).map(f=>f.dst_name))];
+ const E=[];const pth={};
+ c.attack_path.forEach(e=>{if(e.hunt==="LM-05"){(pth[e.src]=pth[e.src]||[]).push(e.dst)}else E.push(e)});
+ Object.entries(pth).forEach(([s,d])=>E.push({src:s,dst:`${d.length} hosts`,hunt:"LM-05",cluster:true}));
+ const inc={};E.forEach(e=>{if(["LM-01","LM-02","LM-03","LM-04"].includes(e.hunt))inc[e.dst]=1});
+ const hosts=[...new Set(c.hosts.filter(h=>h.hunt_score>0).map(h=>h.name))];
+ const roots=hosts.filter(h=>!inc[h]);const lvl={};roots.forEach(r=>lvl[r]=1);
+ for(let k=0;k<4;k++)E.forEach(e=>{if(lvl[e.src]&&!(e.dst in lvl)&&!ext.includes(e.dst))lvl[e.dst]=lvl[e.src]+1});
+ ext.forEach(x=>lvl[x]=0);hosts.forEach(h=>{if(!(h in lvl))lvl[h]=1});
+ const cols={};Object.entries(lvl).forEach(([n,l])=>(cols[l]=cols[l]||[]).push(n));
+ const maxL=Math.max(...Object.keys(cols).map(Number));const pos={};
+ Object.entries(cols).forEach(([l,ns])=>ns.forEach((n,i)=>pos[n]={x:60+(l)*(520/Math.max(1,maxL)),y:(i+1)*380/(ns.length+1),crowd:ns.length>4}));
+ const ec=h=>h.startsWith("C2")?"#b98bff":["LM-05","LM-06","LM-07"].includes(h)?"#ff8a5c":"#4f8cff";
+ const lines=[...E.map(e=>({...e,c:ec(e.hunt)})),...ext.map(x=>({src:roots[0]||hosts[0],dst:x,hunt:(c.findings.find(f=>f.dst_name===x)||{}).hunt||"C2-01",c:"#b98bff"}))];
+ let s=`<defs>${["#b98bff","#ff8a5c","#4f8cff"].map((k,i)=>`<marker id="a${i}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="${k}"/></marker>`).join("")}</defs>`;
+ const mk={"#b98bff":0,"#ff8a5c":1,"#4f8cff":2};
+ lines.forEach(e=>{const a=pos[e.src],b=pos[e.dst];if(!a||!b)return;const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,r=24;
+  const x1=a.x+dx/L*r,y1=a.y+dy/L*r,x2=b.x-dx/L*r,y2=b.y-dy/L*r;
+  s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${e.c}" stroke-width="2" marker-end="url(#a${mk[e.c]})" opacity=".85"/>`;
+  s+=`<text x="${(x1+x2)/2}" y="${(y1+y2)/2-5}" text-anchor="middle" style="font-size:10px;fill:${e.c};font-weight:700">${e.hunt}</text>`});
+ Object.entries(pos).forEach(([n,p])=>{const h=c.hosts.find(x=>x.name===n);const isExt=ext.includes(n);const isCl=/hosts$/.test(n);
+  const fill=isExt?"#241a3a":h&&h.hunt_score>0?"#2a1522":"#14203a";const st=isExt?"#b98bff":h&&h.hunt_score>0?"#ff5c78":"#4f8cff";
+  s+=`<circle cx="${p.x}" cy="${p.y}" r="22" fill="${fill}" stroke="${st}" stroke-width="2" ${isCl?'stroke-dasharray="4 3"':''}/>`;
+  s+=`<text x="${p.x}" y="${p.y+4}" text-anchor="middle" style="font-size:${isExt?9:10.5}px;font-weight:700">${isExt?'C2':isCl?n.split(' ')[0]:n}</text>`;
+  s+=`<text x="${p.x}" y="${p.y+37}" text-anchor="middle" style="fill:#8491ab;font-size:10px">${isExt?n.replace(/^(.{16}).+$/,"$1…"):isCl?'NTLM targets':(h&&!p.crowd?h.role:'')}</text>`});
+ if(!lines.length)s+=`<text x="320" y="190" text-anchor="middle" style="fill:#8491ab">Single-host case — no lateral-movement edges</text>`;
+ $("g").innerHTML=s}
+
+/* ask the network */
+const PRESETS=["What abnormal behaviour happened on the network today?","Which hosts should I investigate first, and why did the model flag them?","Is there any sign of credential theft or lateral movement?"];
+$("presets").innerHTML=PRESETS.map(p=>`<span class="tag" onclick="$('q').value=this.textContent;askQ()">${p}</span>`).join("");
 function showAnswer(r){const j=r.judge||{};const vc=j.verdict==="pass"?"var(--low)":j.verdict==="fail"?"var(--crit)":"var(--mut)";
- $("ans").innerHTML=`<div>${esc(r.answer)}</div><div class="jg"><span class="chip">answered by <b>${esc(r.model||"-")}</b>${r.latency_s?` · ${r.latency_s}s`:""}</span>
- <span class="chip" style="border-color:${vc}">LLM judge <b style="color:${vc}">&nbsp;${esc(j.verdict||"n/a")}</b>${j.faithfulness?` · faithfulness ${j.faithfulness}/5 · relevance ${j.relevance}/5 · completeness ${j.completeness}/5 · actionability ${j.actionability}/5`:""}</span>
- ${j.judge_model?`<span class="chip">judge <b>${esc(j.judge_model)}</b></span>`:""}${(j.unsupported_claims||[]).length?`<span class="chip" style="border-color:var(--crit)">unsupported: ${esc(j.unsupported_claims.join(" | "))}</span>`:""}</div>`}
-function askQ(){const q=$("q").value.trim();if(!q)return;if(!LIVE){if(window.QA&&QA[q])showAnswer(QA[q]);else $("ans").textContent="Static page: start the lab (docker compose up) to ask questions.";return}
- $("ans").textContent="Retrieving today's top behaviours from the store and asking the LLM ...";
+ $("ans").innerHTML=`<div>${esc(r.answer)}</div><div class="jg"><span class="chip">answered by <b>${esc(String(r.model||"-").split(" (")[0])}</b>${r.latency_s?` · ${r.latency_s}s`:""}</span>
+ <span class="chip" style="border-color:${vc}">LLM judge <b style="color:${vc}">&nbsp;${esc(j.verdict||"n/a")}</b>${j.faithfulness?` · faith ${j.faithfulness}/5 · rel ${j.relevance}/5 · comp ${j.completeness}/5 · act ${j.actionability}/5`:""}</span>
+ ${(j.unsupported_claims||[]).length?`<span class="chip" style="border-color:var(--crit)">unsupported: ${esc(j.unsupported_claims.join(" | "))}</span>`:""}</div>`}
+function askQ(){const q=$("q").value.trim();if(!q)return;
+ if(!LIVE){if(window.QA&&QA[q])showAnswer(QA[q]);else $("ans").textContent="Static page — start the lab (docker compose up) to ask free-form questions. The preset questions have stored answers.";return}
+ $("ans").textContent="Retrieving today's top behaviours from the store and asking the LLM …";
  fetch("/api/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})}).then(r=>r.json()).then(showAnswer).catch(e=>$("ans").textContent="error: "+e)}
 $("q").addEventListener("keydown",e=>{if(e.key==="Enter")askQ()});
 function exportCSV(){const rows=[["case_id","host","label","reason","analyst"]];D.cases.forEach(c=>{if(labels[c.case_id])c.hosts.filter(h=>h.hunt_score>0||c.hosts.length==1).forEach(h=>rows.push([c.case_id,h.name,labels[c.case_id],"dashboard","analyst"]))});
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));a.download="labels.csv";a.click()}
-function sel(i){cur=i;curHost=0;const c=D.cases[i];
- $("cscore").className="score sev-"+c.severity;$("cscore").textContent=Math.round(c.score);$("cid").textContent=`${c.case_id} · ${c.severity.toUpperCase()} · ${c.hosts.length} hosts, ${c.touched_hosts.length} touched`;
- $("ctitle").textContent=c.title;
- const order=["Command and Control","Discovery","Credential Access","Lateral Movement"].filter(t=>c.tactics.includes(t));
- $("chain").innerHTML=order.map(t=>`<span class="chip" style="color:${COL[t]};border-color:${COL[t]}"><b style="color:${COL[t]}">${t}</b>&nbsp;${c.findings.filter(f=>f.tactic===t).length} hits</span>`).join('<span class="arrow">→</span>')+(c.kill_chain?'<span class="chip" style="margin-left:8px">C2 + lateral movement on the same hosts: <b>&nbsp;+5 score</b></span>':'');
- queue();graph(c);shapPanel(c);timeline(c);tri(c)}
+
 sel(0);
 </script></body></html>

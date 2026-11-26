@@ -1,4 +1,4 @@
-"""Score Zeek traffic with Isolation Forest, rank alerts, explain each with SHAP.
+"""Score Zeek traffic with Isolation Forest, rank alerts, explain each with the explainability layer.
 
   python score.py --baseline data/baseline --score data/score --top 20 --out out
 
@@ -6,7 +6,7 @@ Once analysts have labelled alerts TP/FP and train_feedback.py has built an XGBo
 rank with it instead:  python score.py --score data/test --xgb feedback/model_xgb.joblib
 
 Outputs (in --out):
-  top_alerts.json      Top-N alerts with SHAP reasons. Hand-off to the LLM triage agent.
+  top_alerts.json      Top-N alerts with explanation reasons. Hand-off to the LLM triage agent.
   scored_alerts.csv    Every alert with features + scores (input for analyst feedback).
   alert_members.csv    Zeek uid -> alert mapping (evidence lookup in the SIEM).
   model_iforest.joblib Trained Isolation Forest + feature builder.
@@ -18,7 +18,7 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-import shap
+from explainability import TreeAttribution
 from sklearn.ensemble import IsolationForest
 
 from features import FEATURE_COLS, FEATURES, LOG_FEATURES, FeatureBuilder, read_zeek_json
@@ -59,11 +59,11 @@ def load(dirpath):
     return conn, dns
 
 
-def shap_reasons(shap_row, x_row, cols, medians, k=5):
+def explain_reasons(contrib_row, x_row, cols, medians, k=5):
     """Top-k features pushing risk UP for one alert."""
     out = []
-    for j in np.argsort(-shap_row)[:k]:
-        if shap_row[j] <= 0:
+    for j in np.argsort(-contrib_row)[:k]:
+        if contrib_row[j] <= 0:
             continue
         f = cols[j]
         out.append({
@@ -71,7 +71,7 @@ def shap_reasons(shap_row, x_row, cols, medians, k=5):
             "description": FEATURES.get(f, "Isolation Forest anomaly score"),
             "value": readable(f, x_row[f]),
             "baseline_median": readable(f, medians[f]) if f in medians else None,
-            "contribution": round(float(shap_row[j]), 4),
+            "contribution": round(float(contrib_row[j]), 4),
         })
     return out
 
@@ -155,7 +155,7 @@ def build_alert_json(top, conns, reasons):
             "sample_uids": list(cc["uid"][:10]),
             "sample_queries": [q for q in cc["query"].dropna().unique()[:3]],
             "indicators": indicators(al),
-            "shap_reasons": rs,
+            "explanations": rs,
             "explanation": "; ".join(
                 f"{r['description']} = {r['value']}"
                 + (f" (baseline median {r['baseline_median']})" if r["baseline_median"] else "")
@@ -228,17 +228,17 @@ def main():
     conns[["uid", "alert_id", "window"]].to_csv(os.path.join(a.out, "alert_members.csv"), index=False)
 
     top = alerts.head(a.top)
-    if_expl = shap.TreeExplainer(iforest)
-    xgb_expl = shap.TreeExplainer(xgb_model) if a.xgb else None
+    if_expl = TreeAttribution(iforest)
+    xgb_expl = TreeAttribution(xgb_model) if a.xgb else None
     reasons = []
     for i in range(len(top)):
         row = top.iloc[[i]]
         if row["scored_by"].iat[0].startswith("xgboost"):
-            sv = xgb_expl.shap_values(row[xcols])[0]           # positive = towards TP
-            reasons.append(shap_reasons(sv, row.iloc[0], xcols, fb.medians))
+            sv = xgb_expl.contributions(row[xcols])[0]           # positive = towards TP
+            reasons.append(explain_reasons(sv, row.iloc[0], xcols, fb.medians))
         else:
-            sv = -if_expl.shap_values(row[FEATURE_COLS])[0]    # IF explains path length: flip sign
-            reasons.append(shap_reasons(sv, row.iloc[0], FEATURE_COLS, fb.medians))
+            sv = -if_expl.contributions(row[FEATURE_COLS])[0]    # IF explains path length: flip sign
+            reasons.append(explain_reasons(sv, row.iloc[0], FEATURE_COLS, fb.medians))
     result = build_alert_json(top, conns, reasons)
     with open(os.path.join(a.out, "top_alerts.json"), "w") as f:
         json.dump(result, f, indent=2, default=str)
@@ -247,7 +247,7 @@ def main():
     for r in result:
         tag = {"n": "*", "r": "!"}.get(r["scored_by"][0], " ")  # * novelty slot, ! pinned by rule
         print(f"  #{r['rank']:>2}{tag}risk {r['risk_score']:6.2f}  {r['alert_id'][:58]:<58} "
-              f"n={r['n_connections']:<4} {', '.join(x['feature'] for x in r['shap_reasons'][:3])}")
+              f"n={r['n_connections']:<4} {', '.join(x['feature'] for x in r['explanations'][:3])}")
 
 
 if __name__ == "__main__":

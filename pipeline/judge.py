@@ -16,7 +16,7 @@ import re
 import llm
 
 JUDGE_SYSTEM = """You are a strict reviewer of SOC triage answers. You get a QUESTION, the CONTEXT the assistant
-was given (platform output: ML scores, SHAP reasons, hunt findings) and the ANSWER. Grade only against the CONTEXT.
+was given (platform output: ML scores, explanation reasons, hunt findings) and the ANSWER. Grade only against the CONTEXT.
 - faithfulness 1-5: every claim is supported by the CONTEXT (5 = nothing invented).
 - relevance 1-5: answers the question that was asked.
 - completeness 1-5: covers the highest-risk cases and their key evidence.

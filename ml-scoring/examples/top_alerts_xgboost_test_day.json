@@ -35,7 +35,7 @@
       "domain never seen before in this network",
       "regular timing (regularity 0.97): possible C2 beacon"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -103,7 +103,7 @@
       "domain never seen before in this network",
       "random-looking (DGA-like) domain names, score 5.2"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -183,7 +183,7 @@
       "burst of 703 failed lookups (NXDOMAIN): possible DGA",
       "703 failed lookups of long names with similar length (29 +/- 3.5 chars, TLD cut off): GameOver-Zeus-style DGA"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -250,7 +250,7 @@
     "indicators": [
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -330,7 +330,7 @@
       "burst of 152 failed lookups (NXDOMAIN): possible DGA",
       "152 failed lookups of long names with similar length (16 +/- 1.3 chars, TLD cut off): GameOver-Zeus-style DGA"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -410,7 +410,7 @@
       "many long random subdomains under one domain: possible DNS tunnelling",
       "100% of DNS queries are TXT/NULL/ANY"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -502,7 +502,7 @@
     "indicators": [
       "393 ports with mostly failed connections: scanning"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -567,7 +567,7 @@
     "indicators": [
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -637,7 +637,7 @@
     "indicators": [
       "destination port almost never seen in the baseline"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -711,7 +711,7 @@
       "cousin/lookalike domain of 'github' (similarity 1.00)",
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "lookalike_score",
         "description": "similarity of a NEW domain to a popular one (cousin domain)",
@@ -774,7 +774,7 @@
     ],
     "sample_queries": [],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -825,7 +825,7 @@
     "indicators": [
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -888,7 +888,7 @@
     ],
     "sample_queries": [],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -956,7 +956,7 @@
       "teams.microsoft.com"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "out_in_ratio",
         "description": "upload/download ratio",
@@ -1014,7 +1014,7 @@
       "gooogle.com"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "if_score",
         "description": "Isolation Forest anomaly score",
@@ -1058,7 +1058,7 @@
     "indicators": [
       "domain never seen before in this network"
     ],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "n_conn",
         "description": "number of connections",
@@ -1123,7 +1123,7 @@
       "gooogle.com"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -1188,7 +1188,7 @@
       "gooogle.com"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -1254,7 +1254,7 @@
       "githb.com"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "bytes_out",
         "description": "total bytes sent out by the internal host",
@@ -1321,7 +1321,7 @@
       "printer-3f.corp.local"
     ],
     "indicators": [],
-    "shap_reasons": [
+    "explanations": [
       {
         "feature": "dns_entropy",
         "description": "randomness of DNS subdomains (entropy)",

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Pipeline container: wait for the sensor, then
-#   features -> Isolation Forest -> SHAP -> store -> LLM triage -> evaluation (LLM answers + judge)
+#   features -> Isolation Forest -> explainability -> store -> LLM triage -> evaluation (LLM answers + judge)
 # The dashboard starts first and fills in as stages finish.
 set -u
 LOGS=${LOGS:-/logs}; DATA=${NSM_DATA:-/data}; DAY=${HUNT_DAY:-attack-day}
@@ -10,7 +10,7 @@ python3 server.py &
 st waiting "waiting for Zeek logs of the baseline days and $DAY"
 until [ -f "$LOGS/$DAY/DONE" ]; do sleep 5; done
 if [ ! -f "$DATA/out/.scored-$DAY" ]; then
-  st scoring "features, Isolation Forest, SHAP and hunts"
+  st scoring "features, Isolation Forest, explainability and hunts"
   python3 hunt.py --baseline "$LOGS/baseline-*" --day "$LOGS/$DAY" --out "$DATA/out" --hosts "$NSM_HOSTNAMES" | tee "$DATA/out/hunt.txt"
   python3 store.py "$DATA/out" && touch "$DATA/out/.scored-$DAY"
 fi

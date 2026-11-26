@@ -107,7 +107,7 @@ def lookalike_match(label, popular_labels):
 def lookalike_score(label, popular_labels):
     return lookalike_match(label, popular_labels)[0]
 
-# alert-level feature -> human description (used by SHAP explanations and the LLM prompt)
+# alert-level feature -> human description (used by the explanation reasons and the LLM prompt)
 FEATURES = {
     "n_conn":              "number of connections",
     "bytes_out":           "total bytes sent out by the internal host",

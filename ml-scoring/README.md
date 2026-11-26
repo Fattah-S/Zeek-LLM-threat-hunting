@@ -1,11 +1,11 @@
-# NSM risk scoring prototype (Zeek → ML → SHAP)
+# NSM risk scoring prototype (Zeek → ML → Explainability)
 
-> **الخلاصة:** الكود ده بياخد Zeek `conn.log` + `dns.log`، يجمّع الـ connections لـ alerts (host → domain/IP في اليوم)، يدّي كل alert risk score بـ Isolation Forest، ويشرح كل واحد بـ SHAP. لما الـ analyst يحط TP/FP، بيتدرب XGBoost على الـ feedback ويرتّب أحسن. وفيه كمان indicators واضحة (cousin domain، DGA، NXDOMAIN burst، DNS tunnel، beacon، scan) جنب الـ score. الناتج `top_alerts.json` هو اللي الـ LLM agent هياخده.
+> **الخلاصة:** الكود ده بياخد Zeek `conn.log` + `dns.log`، يجمّع الـ connections لـ alerts (host → domain/IP في اليوم)، يدّي كل alert risk score بـ Isolation Forest، ويشرح كل واحد بـ explainability layer. لما الـ analyst يحط TP/FP، بيتدرب XGBoost على الـ feedback ويرتّب أحسن. وفيه كمان indicators واضحة (cousin domain، DGA، NXDOMAIN burst، DNS tunnel، beacon، scan) جنب الـ score. الناتج `top_alerts.json` هو اللي الـ LLM agent هياخده.
 
-This is the "ML Scoring Model" and "SHAP" boxes of the pipeline:
+This is the "ML Scoring Model" and "Explainability" boxes of the pipeline:
 
 ```
-Zeek JSON logs ─► features.py ─► score.py (Isolation Forest + rule indicators) ─► SHAP ─► top_alerts.json ─► LLM agent
+Zeek JSON logs ─► features.py ─► score.py (Isolation Forest + rule indicators) ─► Explainability ─► top_alerts.json ─► LLM agent
                                         ▲                                                                  │
                                         └──── train_feedback.py (XGBoost) ◄────────────── analyst TP/FP ◄──┘
 ```
@@ -63,7 +63,7 @@ With XGBoost on, 5 of the top N slots stay reserved for the most anomalous alert
 Example output: [`examples/top_alerts_isolation_forest.json`](examples/top_alerts_isolation_forest.json). The beacon alert reads:
 
 > **indicators:** domain never seen before in this network; regular timing (regularity 0.97): possible C2 beacon
-> **SHAP:** timing regularity = 0.97 (baseline median 0.00); upload/download ratio = 1.87x (baseline median 0.06x); number of connections = 600 (baseline median 26)
+> **Explainability:** timing regularity = 0.97 (baseline median 0.00); upload/download ratio = 1.87x (baseline median 0.06x); number of connections = 600 (baseline median 26)
 
 ## Files
 
@@ -71,7 +71,7 @@ Example output: [`examples/top_alerts_isolation_forest.json`](examples/top_alert
 |---|---|
 | `generate_synthetic.py` | Zeek-format JSON logs (real field names, shared `uid` between conn and dns) + ground truth |
 | `features.py` | Enrichment (domain from DNS, rcode/qtype, failed states, entropy, randomness, lookalike) and aggregation to alerts |
-| `score.py` | Isolation Forest, risk 0–100 (percentile vs baseline), indicators, pinned rules, novelty slots, SHAP top-5 reasons, `top_alerts.json`, `alert_members.csv` (uid → alert, for pulling evidence from Sentinel) |
+| `score.py` | Isolation Forest, risk 0–100 (percentile vs baseline), indicators, pinned rules, novelty slots, explainability top-5 reasons, `top_alerts.json`, `alert_members.csv` (uid → alert, for pulling evidence from Sentinel) |
 | `simulate_feedback.py` | Stand-in for the analyst: labels the top N from ground truth |
 | `train_feedback.py` | Builds an accumulating labelled set, trains XGBoost on features + IF score |
 | `evaluate.py` | Where did each injected attack rank |
