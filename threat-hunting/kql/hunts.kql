@@ -1,0 +1,100 @@
+// Sentinel hunting queries: the same hunts as hunts.py, for running inside Microsoft Sentinel.
+// GUESS: table and column names. Point the `let` lines at your Zeek tables (custom tables via AMA,
+// or the Corelight connector's Corelight_v2_*_CL tables). Field names follow Zeek: id_orig_h, id_resp_h, ...
+let ZeekConn     = Zeek_conn_CL;
+let ZeekDns      = Zeek_dns_CL;
+let ZeekSsl      = Zeek_ssl_CL;
+let ZeekKerberos = Zeek_kerberos_CL;
+let ZeekNtlm     = Zeek_ntlm_CL;
+let ZeekSmbMap   = Zeek_smb_mapping_CL;
+let ZeekSmbFiles = Zeek_smb_files_CL;
+let ZeekDceRpc   = Zeek_dce_rpc_CL;
+let ZeekRdp      = Zeek_rdp_CL;
+let DCs = dynamic(["10.10.0.10","10.10.0.11"]);          // your domain controllers
+let lookback = 1d;
+
+// ---------- LM-01 Admin share + executable written + remote service (PsExec style) ----------
+ZeekSmbMap | where TimeGenerated > ago(lookback) and path matches regex @"(?i)\\(ADMIN|C)\$$"
+| join kind=inner (ZeekSmbFiles | where action == "SMB::FILE_WRITE" and name matches regex @"(?i)\.(exe|dll|bat|ps1|sys)$"
+    | project id_orig_h, id_resp_h, file=name, wts=TimeGenerated) on id_orig_h, id_resp_h
+| join kind=inner (ZeekDceRpc | where endpoint == "svcctl" and operation startswith "CreateService"
+    | project id_orig_h, id_resp_h, sts=TimeGenerated) on id_orig_h, id_resp_h
+| where abs(datetime_diff("second", sts, wts)) < 300
+| summarize first=min(TimeGenerated), files=make_set(file) by src=id_orig_h, dst=id_resp_h, path
+// then drop sources that do this every day (SCCM etc.): see "known behaviour" at the bottom
+
+// ---------- LM-02 Remote WMI / DCOM ----------
+ZeekDceRpc | where TimeGenerated > ago(lookback)
+| where endpoint in ("IRemoteSCMActivator","ISystemActivator","IWbemServices","IWbemLevel1Login")
+| summarize ops=make_set(strcat(endpoint,"::",operation)), first=min(TimeGenerated) by src=id_orig_h, dst=id_resp_h
+
+// ---------- LM-03 Remote scheduled task ----------
+ZeekDceRpc | where TimeGenerated > ago(lookback)
+| where endpoint in ("ITaskSchedulerService","atsvc") and operation has_any ("Register","JobAdd","Create")
+| summarize ops=make_set(operation), first=min(TimeGenerated) by src=id_orig_h, dst=id_resp_h
+
+// ---------- LM-04 Unusual RDP: workstation->workstation, off hours, new pair (2 of 3) ----------
+let rdpBaseline = ZeekRdp | where TimeGenerated between (ago(30d) .. ago(lookback)) | distinct id_orig_h, id_resp_h;
+ZeekRdp | where TimeGenerated > ago(lookback)
+| join kind=leftanti rdpBaseline on id_orig_h, id_resp_h | extend new_pair = true
+| extend off_hours = hourofday(TimeGenerated) < 7 or hourofday(TimeGenerated) >= 20
+| extend wk2wk = ipv4_is_in_range(id_orig_h, "10.10.1.0/24") and ipv4_is_in_range(id_resp_h, "10.10.1.0/24")
+| where toint(off_hours) + toint(wk2wk) + toint(new_pair) >= 2
+| project TimeGenerated, src=id_orig_h, dst=id_resp_h, cookie, off_hours, wk2wk
+
+// ---------- LM-05 NTLM fan-out with one account (pass-the-hash) ----------
+ZeekNtlm | where TimeGenerated > ago(lookback)
+| summarize targets=dcount(id_resp_h), hosts=make_set(id_resp_h), first=min(TimeGenerated), last=max(TimeGenerated)
+    by src=id_orig_h, username, bin(TimeGenerated, 1h)
+| where targets >= 5
+
+// ---------- LM-06 Kerberoasting ----------
+ZeekKerberos | where TimeGenerated > ago(lookback) and request_type == "TGS" and cipher has "rc4"
+| summarize spns=dcount(service), sample=make_set(service, 5) by src=id_orig_h, client, bin(TimeGenerated, 1h)
+| where spns >= 5
+
+// ---------- LM-07 DCSync from a non-DC ----------
+ZeekDceRpc | where TimeGenerated > ago(lookback)
+| where endpoint == "drsuapi" and operation == "DRSGetNCChanges" and id_orig_h !in (DCs)
+| summarize calls=count(), first=min(TimeGenerated) by src=id_orig_h, dst=id_resp_h
+
+// ---------- LM-08 Internal sweep of SMB / RPC / RDP ----------
+ZeekConn | where TimeGenerated > ago(lookback) and local_orig and local_resp and id_resp_p in (135,139,445,3389,5985)
+| summarize targets=dcount(id_resp_h), failed=countif(conn_state != "SF"), total=count() by src=id_orig_h
+| extend failed_ratio = todouble(failed)/total | where targets >= 20 and failed_ratio >= 0.5
+
+// ---------- C2-01 Beaconing (jitter tolerant: median absolute deviation of the gaps) ----------
+ZeekConn | where TimeGenerated > ago(lookback) and local_orig and not(local_resp)
+| summarize ts=make_list(TimeGenerated, 5000), bytes=make_list(orig_bytes, 5000), n=count(), hours=dcount(hourofday(TimeGenerated))
+    by src=id_orig_h, dst=id_resp_h
+| where n >= 20
+| mv-apply t=ts to typeof(datetime) on (order by t asc | extend gap = datetime_diff("second", t, prev(t)) | where gap > 0
+    | summarize gaps=make_list(gap))
+| extend med = toreal(array_sort_asc(gaps)[array_length(gaps)/2])
+| mv-apply g=gaps to typeof(real) on (summarize mad = percentile(abs(g - med), 50))
+| extend timing = 1 - min_of(1.0, mad/med), coverage = hours/24.0
+| where timing >= 0.8 and coverage >= 0.6
+| project src, dst, n, interval_s=med, timing, coverage
+
+// ---------- C2-02 Long-lived external connection ----------
+ZeekConn | where TimeGenerated > ago(lookback) and local_orig and not(local_resp) and duration >= 4h/1s
+| project TimeGenerated, src=id_orig_h, dst=id_resp_h, id_resp_p, hours=duration/3600, orig_bytes, resp_bytes
+
+// ---------- C2-03 DGA: burst of failed lookups ----------
+ZeekDns | where TimeGenerated > ago(lookback) and rcode_name == "NXDOMAIN"
+| summarize names=dcount(query), sample=make_set(query, 5) by src=id_orig_h
+| where names >= 30
+// randomness score is easier in the Python job; here sort by names and eyeball the sample
+
+// ---------- C2-04 New domain + unseen JA3 ----------
+let seenDomains = ZeekSsl | where TimeGenerated between (ago(30d) .. ago(lookback)) | distinct server_name;
+let seenJa3 = ZeekSsl | where TimeGenerated between (ago(30d) .. ago(lookback)) | distinct ja3;
+ZeekSsl | where TimeGenerated > ago(lookback)
+| join kind=leftanti seenDomains on server_name
+| join kind=leftanti seenJa3 on ja3
+| summarize conns=count(), first=min(TimeGenerated) by src=id_orig_h, server_name, ja3
+
+// ---------- Evidence lookup for the LLM agent (fixed, read-only, parameterised by uid) ----------
+// let uids = dynamic(["C54e099219cbbb1a17", "Cc149ebe1abaa8c526"]);
+// union ZeekConn, ZeekSmbMap, ZeekSmbFiles, ZeekDceRpc, ZeekKerberos, ZeekNtlm, ZeekRdp, ZeekSsl, ZeekDns
+// | where uid in (uids) | project-reorder TimeGenerated, Type, uid, id_orig_h, id_resp_h

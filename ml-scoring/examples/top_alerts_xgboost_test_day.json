@@ -1,0 +1,1363 @@
+[
+  {
+    "rank": 1,
+    "alert_id": "10.0.0.44 -> status-ping-svc.online",
+    "src": "10.0.0.44",
+    "target": "status-ping-svc.online",
+    "lookalike_of": null,
+    "risk_score": 99.97,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 121,
+    "first_seen": "2025-12-01T01:00:00+00:00",
+    "last_seen": "2025-12-01T10:55:01.573009014+00:00",
+    "bytes_out": "48.5 KB",
+    "bytes_in": "25.9 KB",
+    "dst_ips": [
+      "45.155.205.99"
+    ],
+    "dst_ports": [
+      443
+    ],
+    "sample_uids": [
+      "Cf37bb53be145468d0",
+      "C2313e6dfb2234e182",
+      "C1cb8c792d63f20337",
+      "C348f18af6ed509cdc",
+      "C8aa76bb75e53b5967",
+      "Cbba62b3e4cd32989f",
+      "C8bf1d82e2e3332c8b",
+      "Ca173d8fb4eda6e460",
+      "Cccfa1475f0abfe4f8",
+      "C046728edb2d690a83"
+    ],
+    "sample_queries": [],
+    "indicators": [
+      "domain never seen before in this network",
+      "regular timing (regularity 0.97): possible C2 beacon"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.698",
+        "baseline_median": null,
+        "contribution": 3.5589
+      },
+      {
+        "feature": "domain_randomness",
+        "description": "how random the domain name looks (freq.py-style, DGA)",
+        "value": "4.37",
+        "baseline_median": "3.08",
+        "contribution": 1.5738
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "1.88x",
+        "baseline_median": "0.06x",
+        "contribution": 1.3657
+      },
+      {
+        "feature": "label_len_mean",
+        "description": "average domain length with the TLD cut off",
+        "value": "15.00",
+        "baseline_median": "8.00",
+        "contribution": 0.7297
+      },
+      {
+        "feature": "new_domain",
+        "description": "domain never seen in the baseline",
+        "value": "yes",
+        "baseline_median": "no",
+        "contribution": 0.5416
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.698; how random the domain name looks (freq.py-style, DGA) = 4.37 (baseline median 3.08); upload/download ratio = 1.88x (baseline median 0.06x); average domain length with the TLD cut off = 15.00 (baseline median 8.00); domain never seen in the baseline = yes (baseline median no)"
+  },
+  {
+    "rank": 2,
+    "alert_id": "10.0.0.42 -> lyrqrn74hvz33u04u0yqchfezqhvj.com",
+    "src": "10.0.0.42",
+    "target": "lyrqrn74hvz33u04u0yqchfezqhvj.com",
+    "lookalike_of": null,
+    "risk_score": 99.96,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T08:26:01.424464941+00:00",
+    "last_seen": "2025-12-01T08:26:01.424464941+00:00",
+    "bytes_out": "55 B",
+    "bytes_in": "120 B",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "Cca22e9025711aeddb"
+    ],
+    "sample_queries": [
+      "lyrqrn74hvz33u04u0yqchfezqhvj.com"
+    ],
+    "indicators": [
+      "domain never seen before in this network",
+      "random-looking (DGA-like) domain names, score 5.2"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.686",
+        "baseline_median": null,
+        "contribution": 3.5692
+      },
+      {
+        "feature": "domain_randomness",
+        "description": "how random the domain name looks (freq.py-style, DGA)",
+        "value": "5.24",
+        "baseline_median": "3.08",
+        "contribution": 1.7323
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "0.46x",
+        "baseline_median": "0.06x",
+        "contribution": 1.3496
+      },
+      {
+        "feature": "label_len_mean",
+        "description": "average domain length with the TLD cut off",
+        "value": "29.00",
+        "baseline_median": "8.00",
+        "contribution": 0.7497
+      },
+      {
+        "feature": "new_domain",
+        "description": "domain never seen in the baseline",
+        "value": "yes",
+        "baseline_median": "no",
+        "contribution": 0.5558
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.686; how random the domain name looks (freq.py-style, DGA) = 5.24 (baseline median 3.08); upload/download ratio = 0.46x (baseline median 0.06x); average domain length with the TLD cut off = 29.00 (baseline median 8.00); domain never seen in the baseline = yes (baseline median no)"
+  },
+  {
+    "rank": 3,
+    "alert_id": "10.0.0.42 -> failed DNS lookups (NXDOMAIN)",
+    "src": "10.0.0.42",
+    "target": "failed DNS lookups (NXDOMAIN)",
+    "lookalike_of": null,
+    "risk_score": 99.96,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 706,
+    "first_seen": "2025-12-01T02:00:00+00:00",
+    "last_seen": "2025-12-01T18:02:18.423784018+00:00",
+    "bytes_out": "37.8 KB",
+    "bytes_in": "75.8 KB",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "C8f3b2b2905e5cf8c5",
+      "C5faa6e535ad8c5e1d",
+      "C80973aa02d86ed3d1",
+      "C089cb760db23e28bc",
+      "Ce46941848a9e87e32",
+      "C036589b3640c9aab6",
+      "Cfc73af1c3dca52608",
+      "C323e73208418039ff",
+      "C45dd387f51524ebb0",
+      "C2f56115d81630a8ce"
+    ],
+    "sample_queries": [
+      "akihtz0dwcz634sy835kewb5t.biz",
+      "pvvgwkkaedpqcidmrtwtuxzq75j50rzeec.net",
+      "63d8c21kcrqa5ssy1i2grv9lgjj.net"
+    ],
+    "indicators": [
+      "random-looking (DGA-like) domain names, score 5.5",
+      "burst of 703 failed lookups (NXDOMAIN): possible DGA",
+      "703 failed lookups of long names with similar length (29 +/- 3.5 chars, TLD cut off): GameOver-Zeus-style DGA"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.709",
+        "baseline_median": null,
+        "contribution": 3.7128
+      },
+      {
+        "feature": "domain_randomness",
+        "description": "how random the domain name looks (freq.py-style, DGA)",
+        "value": "5.53",
+        "baseline_median": "3.08",
+        "contribution": 1.5165
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "0.50x",
+        "baseline_median": "0.06x",
+        "contribution": 1.4374
+      },
+      {
+        "feature": "label_len_mean",
+        "description": "average domain length with the TLD cut off",
+        "value": "28.83",
+        "baseline_median": "8.00",
+        "contribution": 0.6937
+      },
+      {
+        "feature": "n_conn",
+        "description": "number of connections",
+        "value": "706",
+        "baseline_median": "26",
+        "contribution": 0.3954
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.709; how random the domain name looks (freq.py-style, DGA) = 5.53 (baseline median 3.08); upload/download ratio = 0.50x (baseline median 0.06x); average domain length with the TLD cut off = 28.83 (baseline median 8.00); number of connections = 706 (baseline median 26)"
+  },
+  {
+    "rank": 4,
+    "alert_id": "10.0.0.34 -> pocjndskpeosdryn.net",
+    "src": "10.0.0.34",
+    "target": "pocjndskpeosdryn.net",
+    "lookalike_of": null,
+    "risk_score": 99.9,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T06:03:05.925498009+00:00",
+    "last_seen": "2025-12-01T06:03:05.925498009+00:00",
+    "bytes_out": "45 B",
+    "bytes_in": "110 B",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "C068a3f1f0d958085a"
+    ],
+    "sample_queries": [
+      "pocjndskpeosdryn.net"
+    ],
+    "indicators": [
+      "domain never seen before in this network"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.686",
+        "baseline_median": null,
+        "contribution": 3.5692
+      },
+      {
+        "feature": "domain_randomness",
+        "description": "how random the domain name looks (freq.py-style, DGA)",
+        "value": "4.17",
+        "baseline_median": "3.08",
+        "contribution": 1.6679
+      },
+      {
+        "feature": "label_len_mean",
+        "description": "average domain length with the TLD cut off",
+        "value": "16.00",
+        "baseline_median": "8.00",
+        "contribution": 0.7497
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "0.41x",
+        "baseline_median": "0.06x",
+        "contribution": 0.6307
+      },
+      {
+        "feature": "new_domain",
+        "description": "domain never seen in the baseline",
+        "value": "yes",
+        "baseline_median": "no",
+        "contribution": 0.5558
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.686; how random the domain name looks (freq.py-style, DGA) = 4.17 (baseline median 3.08); average domain length with the TLD cut off = 16.00 (baseline median 8.00); upload/download ratio = 0.41x (baseline median 0.06x); domain never seen in the baseline = yes (baseline median no)"
+  },
+  {
+    "rank": 5,
+    "alert_id": "10.0.0.34 -> failed DNS lookups (NXDOMAIN)",
+    "src": "10.0.0.34",
+    "target": "failed DNS lookups (NXDOMAIN)",
+    "lookalike_of": null,
+    "risk_score": 99.88,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 152,
+    "first_seen": "2025-12-01T06:00:00+00:00",
+    "last_seen": "2025-12-01T18:54:37.668591976+00:00",
+    "bytes_out": "6.7 KB",
+    "bytes_in": "14.8 KB",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "C8408c8cc896f386e8",
+      "C38a555f7869ce6ed1",
+      "C96f24e80f9a334943",
+      "Cc0225a0dd675debda",
+      "Cb25a6c764f98c59ae",
+      "Caf0d8d4ec2577a063",
+      "C6be793f443ed8eca0",
+      "C03907576a3e4a3d1c",
+      "C151fa7846ec46c8eb",
+      "C838ae55f7050ddfcb"
+    ],
+    "sample_queries": [
+      "qffthngcyfhmfwge.net",
+      "csgttjebkuezhkbp.net",
+      "icwohgyqlktxulkj.net"
+    ],
+    "indicators": [
+      "random-looking (DGA-like) domain names, score 5.5",
+      "burst of 152 failed lookups (NXDOMAIN): possible DGA",
+      "152 failed lookups of long names with similar length (16 +/- 1.3 chars, TLD cut off): GameOver-Zeus-style DGA"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.701",
+        "baseline_median": null,
+        "contribution": 3.7446
+      },
+      {
+        "feature": "domain_randomness",
+        "description": "how random the domain name looks (freq.py-style, DGA)",
+        "value": "5.48",
+        "baseline_median": "3.08",
+        "contribution": 1.5721
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "0.45x",
+        "baseline_median": "0.06x",
+        "contribution": 1.185
+      },
+      {
+        "feature": "label_len_mean",
+        "description": "average domain length with the TLD cut off",
+        "value": "15.82",
+        "baseline_median": "8.00",
+        "contribution": 0.6937
+      },
+      {
+        "feature": "n_conn",
+        "description": "number of connections",
+        "value": "152",
+        "baseline_median": "26",
+        "contribution": 0.0915
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.701; how random the domain name looks (freq.py-style, DGA) = 5.48 (baseline median 3.08); upload/download ratio = 0.45x (baseline median 0.06x); average domain length with the TLD cut off = 15.82 (baseline median 8.00); number of connections = 152 (baseline median 26)"
+  },
+  {
+    "rank": 6,
+    "alert_id": "10.0.0.26 -> tunl-ns.icu",
+    "src": "10.0.0.26",
+    "target": "tunl-ns.icu",
+    "lookalike_of": null,
+    "risk_score": 99.71,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 900,
+    "first_seen": "2025-12-01T09:00:00+00:00",
+    "last_seen": "2025-12-01T09:59:55.810240030+00:00",
+    "bytes_out": "131.1 KB",
+    "bytes_in": "201.7 KB",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "C77f5bce41ef42aebb",
+      "C16176ea15c919580c",
+      "C8bd5d141f4a719554",
+      "Cacb85dcd3ad2d49c1",
+      "C4a62557a53bac0114",
+      "Cad1a91c2984556c38",
+      "C304f2d5839d3f753b",
+      "C3b98ca1d3468ac66c",
+      "C4673112dcd9a92b1e",
+      "C7e060e4b0dfa36964"
+    ],
+    "sample_queries": [
+      "71zulkgspechu1kgqlvyvrrsei9j91rgi59hjjsnnnwq1d2e.q.tunl-ns.icu",
+      "hmi6cv3mxe8w4wvaydhhi6rtzhp270fqgjotd1x9xd5i85y3.q.tunl-ns.icu",
+      "z9z9t8h3pbxynugmk1pqbsl0d2gkcv8jqb8lwd0526s1p42y.q.tunl-ns.icu"
+    ],
+    "indicators": [
+      "domain never seen before in this network",
+      "many long random subdomains under one domain: possible DNS tunnelling",
+      "100% of DNS queries are TXT/NULL/ANY"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.691",
+        "baseline_median": null,
+        "contribution": 3.5513
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "0.65x",
+        "baseline_median": "0.06x",
+        "contribution": 1.3095
+      },
+      {
+        "feature": "domain_randomness",
+        "description": "how random the domain name looks (freq.py-style, DGA)",
+        "value": "3.71",
+        "baseline_median": "3.08",
+        "contribution": 0.4325
+      },
+      {
+        "feature": "new_domain",
+        "description": "domain never seen in the baseline",
+        "value": "yes",
+        "baseline_median": "no",
+        "contribution": 0.4186
+      },
+      {
+        "feature": "n_conn",
+        "description": "number of connections",
+        "value": "900",
+        "baseline_median": "26",
+        "contribution": 0.3777
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.691; upload/download ratio = 0.65x (baseline median 0.06x); how random the domain name looks (freq.py-style, DGA) = 3.71 (baseline median 3.08); domain never seen in the baseline = yes (baseline median no); number of connections = 900 (baseline median 26)"
+  },
+  {
+    "rank": 7,
+    "alert_id": "10.0.0.16 -> failed connections (multiple hosts)",
+    "src": "10.0.0.16",
+    "target": "failed connections (multiple hosts)",
+    "lookalike_of": null,
+    "risk_score": 99.64,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 400,
+    "first_seen": "2025-12-01T20:00:00+00:00",
+    "last_seen": "2025-12-01T20:00:19.950000048+00:00",
+    "bytes_out": "0 B",
+    "bytes_in": "0 B",
+    "dst_ips": [
+      "10.0.0.1",
+      "10.0.0.10",
+      "10.0.0.101",
+      "10.0.0.102",
+      "10.0.0.103",
+      "10.0.0.104",
+      "10.0.0.105",
+      "10.0.0.107",
+      "10.0.0.109",
+      "10.0.0.11"
+    ],
+    "dst_ports": [
+      132,
+      134,
+      137,
+      213,
+      239,
+      245,
+      292,
+      296,
+      319,
+      335
+    ],
+    "sample_uids": [
+      "Cdf74f4c222086a8d4",
+      "C0db844440acfeea0c",
+      "C4fd1e7d9c1a370ca5",
+      "C4fba9134c00cd4936",
+      "Cf435b820171f24b9a",
+      "C376c25ec272c55faf",
+      "C0d571a4b88800876f",
+      "C1e329aab118a8e42f",
+      "C57b473817099295fd",
+      "Cb9d354dc6240c21d4"
+    ],
+    "sample_queries": [],
+    "indicators": [
+      "393 ports with mostly failed connections: scanning"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.740",
+        "baseline_median": null,
+        "contribution": 3.7326
+      },
+      {
+        "feature": "port_rarity",
+        "description": "rarity of the destination port",
+        "value": "5.28",
+        "baseline_median": "0.39",
+        "contribution": 1.6055
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "1.00x",
+        "baseline_median": "0.06x",
+        "contribution": 1.0958
+      },
+      {
+        "feature": "n_conn",
+        "description": "number of connections",
+        "value": "400",
+        "baseline_median": "26",
+        "contribution": 0.7394
+      },
+      {
+        "feature": "dns_entropy",
+        "description": "randomness of DNS subdomains (entropy)",
+        "value": "0.00",
+        "baseline_median": "0.75",
+        "contribution": 0.0064
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.740; rarity of the destination port = 5.28 (baseline median 0.39); upload/download ratio = 1.00x (baseline median 0.06x); number of connections = 400 (baseline median 26); randomness of DNS subdomains (entropy) = 0.00 (baseline median 0.75)"
+  },
+  {
+    "rank": 8,
+    "alert_id": "10.0.0.19 -> files-backup-cloud.site",
+    "src": "10.0.0.19",
+    "target": "files-backup-cloud.site",
+    "lookalike_of": null,
+    "risk_score": 99.42,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T02:30:00+00:00",
+    "last_seen": "2025-12-01T02:30:00+00:00",
+    "bytes_out": "591.3 MB",
+    "bytes_in": "205.1 KB",
+    "dst_ips": [
+      "185.220.101.7"
+    ],
+    "dst_ports": [
+      443
+    ],
+    "sample_uids": [
+      "Cf9c8d54ddc2963d49"
+    ],
+    "sample_queries": [],
+    "indicators": [
+      "domain never seen before in this network"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.716",
+        "baseline_median": null,
+        "contribution": 3.2953
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "2,952.37x",
+        "baseline_median": "0.06x",
+        "contribution": 1.0813
+      },
+      {
+        "feature": "label_len_mean",
+        "description": "average domain length with the TLD cut off",
+        "value": "18.00",
+        "baseline_median": "8.00",
+        "contribution": 0.747
+      },
+      {
+        "feature": "new_domain",
+        "description": "domain never seen in the baseline",
+        "value": "yes",
+        "baseline_median": "no",
+        "contribution": 0.5472
+      },
+      {
+        "feature": "bytes_in",
+        "description": "total bytes received",
+        "value": "205.1 KB",
+        "baseline_median": "414.2 KB",
+        "contribution": 0.2356
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.716; upload/download ratio = 2,952.37x (baseline median 0.06x); average domain length with the TLD cut off = 18.00 (baseline median 8.00); domain never seen in the baseline = yes (baseline median no); total bytes received = 205.1 KB (baseline median 414.2 KB)"
+  },
+  {
+    "rank": 9,
+    "alert_id": "10.0.0.50 -> 91.92.240.15",
+    "src": "10.0.0.50",
+    "target": "91.92.240.15",
+    "lookalike_of": null,
+    "risk_score": 98.74,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 6,
+    "first_seen": "2025-12-01T15:00:00+00:00",
+    "last_seen": "2025-12-01T15:33:20+00:00",
+    "bytes_out": "253.7 KB",
+    "bytes_in": "2.1 MB",
+    "dst_ips": [
+      "91.92.240.15"
+    ],
+    "dst_ports": [
+      8443
+    ],
+    "sample_uids": [
+      "C3879032790538a802",
+      "C490799c54520942ec",
+      "Cc5614f0c9c7b634e2",
+      "C825c02ec4c4ed2fdd",
+      "C97a7c98b2f5fc7e50",
+      "C479441432db6cc958"
+    ],
+    "sample_queries": [],
+    "indicators": [
+      "destination port almost never seen in the baseline"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.648",
+        "baseline_median": null,
+        "contribution": 2.7844
+      },
+      {
+        "feature": "port_rarity",
+        "description": "rarity of the destination port",
+        "value": "5.28",
+        "baseline_median": "0.39",
+        "contribution": 1.9902
+      },
+      {
+        "feature": "max_duration",
+        "description": "longest connection duration",
+        "value": "358.3s",
+        "baseline_median": "8.9s",
+        "contribution": 0.5762
+      },
+      {
+        "feature": "bytes_out",
+        "description": "total bytes sent out by the internal host",
+        "value": "253.7 KB",
+        "baseline_median": "20.3 KB",
+        "contribution": 0.2919
+      },
+      {
+        "feature": "bytes_in",
+        "description": "total bytes received",
+        "value": "2.1 MB",
+        "baseline_median": "414.2 KB",
+        "contribution": 0.2399
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.648; rarity of the destination port = 5.28 (baseline median 0.39); longest connection duration = 358.3s (baseline median 8.9s); total bytes sent out by the internal host = 253.7 KB (baseline median 20.3 KB); total bytes received = 2.1 MB (baseline median 414.2 KB)"
+  },
+  {
+    "rank": 10,
+    "alert_id": "10.0.0.46 -> g1thub.com",
+    "src": "10.0.0.46",
+    "target": "g1thub.com",
+    "lookalike_of": "github",
+    "risk_score": 85.05,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 5,
+    "first_seen": "2025-12-01T10:29:59.950000048+00:00",
+    "last_seen": "2025-12-01T10:31:00+00:00",
+    "bytes_out": "9.5 KB",
+    "bytes_in": "119.8 KB",
+    "dst_ips": [
+      "10.0.0.2",
+      "104.21.88.200"
+    ],
+    "dst_ports": [
+      53,
+      443
+    ],
+    "sample_uids": [
+      "C1e1eed12dc3429e05",
+      "Cda140ae03a70907f4",
+      "C226ef7f268417f433",
+      "C4c3290d8f0ee0a5f3",
+      "C10ddfeb6848c97e3c"
+    ],
+    "sample_queries": [
+      "g1thub.com"
+    ],
+    "indicators": [
+      "cousin/lookalike domain of 'github' (similarity 1.00)",
+      "domain never seen before in this network"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "lookalike_score",
+        "description": "similarity of a NEW domain to a popular one (cousin domain)",
+        "value": "1.00",
+        "baseline_median": "0.00",
+        "contribution": 1.781
+      },
+      {
+        "feature": "domain_randomness",
+        "description": "how random the domain name looks (freq.py-style, DGA)",
+        "value": "4.43",
+        "baseline_median": "3.08",
+        "contribution": 1.5025
+      },
+      {
+        "feature": "new_domain",
+        "description": "domain never seen in the baseline",
+        "value": "yes",
+        "baseline_median": "no",
+        "contribution": 0.8543
+      },
+      {
+        "feature": "domain_host_count",
+        "description": "internal hosts that talk to this domain",
+        "value": "1",
+        "baseline_median": "50",
+        "contribution": 0.0879
+      },
+      {
+        "feature": "dns_entropy",
+        "description": "randomness of DNS subdomains (entropy)",
+        "value": "0.00",
+        "baseline_median": "0.75",
+        "contribution": 0.008
+      }
+    ],
+    "explanation": "similarity of a NEW domain to a popular one (cousin domain) = 1.00 (baseline median 0.00); how random the domain name looks (freq.py-style, DGA) = 4.43 (baseline median 3.08); domain never seen in the baseline = yes (baseline median no); internal hosts that talk to this domain = 1 (baseline median 50); randomness of DNS subdomains (entropy) = 0.00 (baseline median 0.75)"
+  },
+  {
+    "rank": 11,
+    "alert_id": "10.0.0.11 -> 10.0.0.2",
+    "src": "10.0.0.11",
+    "target": "10.0.0.2",
+    "lookalike_of": null,
+    "risk_score": 55.12,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T10:53:06.020172119+00:00",
+    "last_seen": "2025-12-01T10:53:06.020172119+00:00",
+    "bytes_out": "48 B",
+    "bytes_in": "48 B",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      123
+    ],
+    "sample_uids": [
+      "Ce80a8a7befe195feb"
+    ],
+    "sample_queries": [],
+    "indicators": [],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.682",
+        "baseline_median": null,
+        "contribution": 3.559
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "1.00x",
+        "baseline_median": "0.06x",
+        "contribution": 0.981
+      },
+      {
+        "feature": "dns_entropy",
+        "description": "randomness of DNS subdomains (entropy)",
+        "value": "0.00",
+        "baseline_median": "0.75",
+        "contribution": 0.0064
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.682; upload/download ratio = 1.00x (baseline median 0.06x); randomness of DNS subdomains (entropy) = 0.00 (baseline median 0.75)"
+  },
+  {
+    "rank": 12,
+    "alert_id": "10.0.0.39 -> music-car.io",
+    "src": "10.0.0.39",
+    "target": "music-car.io",
+    "lookalike_of": null,
+    "risk_score": 27.98,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T16:34:45.466481924+00:00",
+    "last_seen": "2025-12-01T16:34:45.466481924+00:00",
+    "bytes_out": "1.8 KB",
+    "bytes_in": "750 B",
+    "dst_ips": [
+      "198.18.126.80"
+    ],
+    "dst_ports": [
+      443
+    ],
+    "sample_uids": [
+      "C3bac7425a4c040450"
+    ],
+    "sample_queries": [],
+    "indicators": [
+      "domain never seen before in this network"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.657",
+        "baseline_median": null,
+        "contribution": 2.1952
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "2.50x",
+        "baseline_median": "0.06x",
+        "contribution": 0.9577
+      },
+      {
+        "feature": "new_domain",
+        "description": "domain never seen in the baseline",
+        "value": "yes",
+        "baseline_median": "no",
+        "contribution": 0.5227
+      },
+      {
+        "feature": "dns_entropy",
+        "description": "randomness of DNS subdomains (entropy)",
+        "value": "0.00",
+        "baseline_median": "0.75",
+        "contribution": 0.0064
+      },
+      {
+        "feature": "is_external",
+        "description": "destination outside the network",
+        "value": "yes",
+        "baseline_median": "yes",
+        "contribution": 0.0059
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.657; upload/download ratio = 2.50x (baseline median 0.06x); domain never seen in the baseline = yes (baseline median no); randomness of DNS subdomains (entropy) = 0.00 (baseline median 0.75); destination outside the network = yes (baseline median yes)"
+  },
+  {
+    "rank": 13,
+    "alert_id": "10.0.0.15 -> daily-photo.co",
+    "src": "10.0.0.15",
+    "target": "daily-photo.co",
+    "lookalike_of": null,
+    "risk_score": 23.07,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T09:49:07.579351902+00:00",
+    "last_seen": "2025-12-01T09:49:07.579351902+00:00",
+    "bytes_out": "2.6 KB",
+    "bytes_in": "3.4 KB",
+    "dst_ips": [
+      "198.18.184.30"
+    ],
+    "dst_ports": [
+      443
+    ],
+    "sample_uids": [
+      "C624f4b1cabd909896"
+    ],
+    "sample_queries": [],
+    "indicators": [],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.664",
+        "baseline_median": null,
+        "contribution": 2.3198
+      },
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "0.76x",
+        "baseline_median": "0.06x",
+        "contribution": 1.011
+      },
+      {
+        "feature": "label_len_mean",
+        "description": "average domain length with the TLD cut off",
+        "value": "11.00",
+        "baseline_median": "8.00",
+        "contribution": 0.2875
+      },
+      {
+        "feature": "dns_entropy",
+        "description": "randomness of DNS subdomains (entropy)",
+        "value": "0.00",
+        "baseline_median": "0.75",
+        "contribution": 0.0064
+      },
+      {
+        "feature": "is_external",
+        "description": "destination outside the network",
+        "value": "yes",
+        "baseline_median": "yes",
+        "contribution": 0.003
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.664; upload/download ratio = 0.76x (baseline median 0.06x); average domain length with the TLD cut off = 11.00 (baseline median 8.00); randomness of DNS subdomains (entropy) = 0.00 (baseline median 0.75); destination outside the network = yes (baseline median yes)"
+  },
+  {
+    "rank": 14,
+    "alert_id": "10.0.0.49 -> microsoft.com",
+    "src": "10.0.0.49",
+    "target": "microsoft.com",
+    "lookalike_of": null,
+    "risk_score": 12.55,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 2,
+    "first_seen": "2025-12-02T00:00:23.749536037+00:00",
+    "last_seen": "2025-12-02T00:00:23.799535990+00:00",
+    "bytes_out": "3.1 KB",
+    "bytes_in": "2.0 KB",
+    "dst_ips": [
+      "10.0.0.2",
+      "52.113.194.132"
+    ],
+    "dst_ports": [
+      53,
+      443
+    ],
+    "sample_uids": [
+      "Cb273e69ee8778f921",
+      "Ca94af5958813083df"
+    ],
+    "sample_queries": [
+      "teams.microsoft.com"
+    ],
+    "indicators": [],
+    "shap_reasons": [
+      {
+        "feature": "out_in_ratio",
+        "description": "upload/download ratio",
+        "value": "1.52x",
+        "baseline_median": "0.06x",
+        "contribution": 1.1977
+      },
+      {
+        "feature": "domain_randomness",
+        "description": "how random the domain name looks (freq.py-style, DGA)",
+        "value": "3.54",
+        "baseline_median": "3.08",
+        "contribution": 0.5177
+      },
+      {
+        "feature": "domain_host_count",
+        "description": "internal hosts that talk to this domain",
+        "value": "1",
+        "baseline_median": "50",
+        "contribution": 0.048
+      },
+      {
+        "feature": "is_external",
+        "description": "destination outside the network",
+        "value": "yes",
+        "baseline_median": "yes",
+        "contribution": 0.0059
+      }
+    ],
+    "explanation": "upload/download ratio = 1.52x (baseline median 0.06x); how random the domain name looks (freq.py-style, DGA) = 3.54 (baseline median 3.08); internal hosts that talk to this domain = 1 (baseline median 50); destination outside the network = yes (baseline median yes)"
+  },
+  {
+    "rank": 15,
+    "alert_id": "10.0.0.36 -> failed DNS lookups (NXDOMAIN)",
+    "src": "10.0.0.36",
+    "target": "failed DNS lookups (NXDOMAIN)",
+    "lookalike_of": null,
+    "risk_score": 10.19,
+    "scored_by": "xgboost (analyst feedback)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T15:41:55.800817966+00:00",
+    "last_seen": "2025-12-01T15:41:55.800817966+00:00",
+    "bytes_out": "40 B",
+    "bytes_in": "100 B",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "C23516063ae76e6834"
+    ],
+    "sample_queries": [
+      "gooogle.com"
+    ],
+    "indicators": [],
+    "shap_reasons": [
+      {
+        "feature": "if_score",
+        "description": "Isolation Forest anomaly score",
+        "value": "0.648",
+        "baseline_median": null,
+        "contribution": 2.3154
+      },
+      {
+        "feature": "dns_entropy",
+        "description": "randomness of DNS subdomains (entropy)",
+        "value": "0.00",
+        "baseline_median": "0.75",
+        "contribution": 0.0064
+      }
+    ],
+    "explanation": "Isolation Forest anomaly score = 0.648; randomness of DNS subdomains (entropy) = 0.00 (baseline median 0.75)"
+  },
+  {
+    "rank": 16,
+    "alert_id": "10.0.0.21 -> code-learn.io",
+    "src": "10.0.0.21",
+    "target": "code-learn.io",
+    "lookalike_of": null,
+    "risk_score": 99.84,
+    "scored_by": "novelty slot (isolation_forest)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T06:56:52.919572115+00:00",
+    "last_seen": "2025-12-01T06:56:52.919572115+00:00",
+    "bytes_out": "874 B",
+    "bytes_in": "69.5 KB",
+    "dst_ips": [
+      "198.18.76.29"
+    ],
+    "dst_ports": [
+      443
+    ],
+    "sample_uids": [
+      "C07323d1306ffe0afe"
+    ],
+    "sample_queries": [],
+    "indicators": [
+      "domain never seen before in this network"
+    ],
+    "shap_reasons": [
+      {
+        "feature": "n_conn",
+        "description": "number of connections",
+        "value": "1",
+        "baseline_median": "26",
+        "contribution": 1.6653
+      },
+      {
+        "feature": "n_dst_ports",
+        "description": "distinct destination ports",
+        "value": "1",
+        "baseline_median": "2",
+        "contribution": 1.6431
+      },
+      {
+        "feature": "domain_host_count",
+        "description": "internal hosts that talk to this domain",
+        "value": "2",
+        "baseline_median": "50",
+        "contribution": 1.4371
+      },
+      {
+        "feature": "n_dst_ips",
+        "description": "distinct destination IPs",
+        "value": "1",
+        "baseline_median": "2",
+        "contribution": 1.2373
+      },
+      {
+        "feature": "n_unique_queries",
+        "description": "distinct DNS names queried",
+        "value": "0",
+        "baseline_median": "1",
+        "contribution": 1.2079
+      }
+    ],
+    "explanation": "number of connections = 1 (baseline median 26); distinct destination ports = 1 (baseline median 2); internal hosts that talk to this domain = 2 (baseline median 50); distinct destination IPs = 1 (baseline median 2); distinct DNS names queried = 0 (baseline median 1)"
+  },
+  {
+    "rank": 17,
+    "alert_id": "10.0.0.24 -> failed DNS lookups (NXDOMAIN)",
+    "src": "10.0.0.24",
+    "target": "failed DNS lookups (NXDOMAIN)",
+    "lookalike_of": null,
+    "risk_score": 99.71,
+    "scored_by": "novelty slot (isolation_forest)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T14:01:28.844515085+00:00",
+    "last_seen": "2025-12-01T14:01:28.844515085+00:00",
+    "bytes_out": "40 B",
+    "bytes_in": "100 B",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "C39cbd90cc4fb52614"
+    ],
+    "sample_queries": [
+      "gooogle.com"
+    ],
+    "indicators": [],
+    "shap_reasons": [
+      {
+        "feature": "bytes_out",
+        "description": "total bytes sent out by the internal host",
+        "value": "40 B",
+        "baseline_median": "20.3 KB",
+        "contribution": 1.4095
+      },
+      {
+        "feature": "bytes_in",
+        "description": "total bytes received",
+        "value": "100 B",
+        "baseline_median": "414.2 KB",
+        "contribution": 1.3622
+      },
+      {
+        "feature": "n_conn",
+        "description": "number of connections",
+        "value": "1",
+        "baseline_median": "26",
+        "contribution": 1.144
+      },
+      {
+        "feature": "nxdomain_ratio",
+        "description": "share of DNS lookups that failed (NXDOMAIN)",
+        "value": "100%",
+        "baseline_median": "0%",
+        "contribution": 0.909
+      },
+      {
+        "feature": "n_dst_ports",
+        "description": "distinct destination ports",
+        "value": "1",
+        "baseline_median": "2",
+        "contribution": 0.6724
+      }
+    ],
+    "explanation": "total bytes sent out by the internal host = 40 B (baseline median 20.3 KB); total bytes received = 100 B (baseline median 414.2 KB); number of connections = 1 (baseline median 26); share of DNS lookups that failed (NXDOMAIN) = 100% (baseline median 0%); distinct destination ports = 1 (baseline median 2)"
+  },
+  {
+    "rank": 18,
+    "alert_id": "10.0.0.44 -> failed DNS lookups (NXDOMAIN)",
+    "src": "10.0.0.44",
+    "target": "failed DNS lookups (NXDOMAIN)",
+    "lookalike_of": null,
+    "risk_score": 99.71,
+    "scored_by": "novelty slot (isolation_forest)",
+    "n_connections": 1,
+    "first_seen": "2025-12-01T13:55:52.427335978+00:00",
+    "last_seen": "2025-12-01T13:55:52.427335978+00:00",
+    "bytes_out": "40 B",
+    "bytes_in": "100 B",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "Cad44fc87648bfed55"
+    ],
+    "sample_queries": [
+      "gooogle.com"
+    ],
+    "indicators": [],
+    "shap_reasons": [
+      {
+        "feature": "bytes_out",
+        "description": "total bytes sent out by the internal host",
+        "value": "40 B",
+        "baseline_median": "20.3 KB",
+        "contribution": 1.4095
+      },
+      {
+        "feature": "bytes_in",
+        "description": "total bytes received",
+        "value": "100 B",
+        "baseline_median": "414.2 KB",
+        "contribution": 1.3622
+      },
+      {
+        "feature": "n_conn",
+        "description": "number of connections",
+        "value": "1",
+        "baseline_median": "26",
+        "contribution": 1.144
+      },
+      {
+        "feature": "nxdomain_ratio",
+        "description": "share of DNS lookups that failed (NXDOMAIN)",
+        "value": "100%",
+        "baseline_median": "0%",
+        "contribution": 0.909
+      },
+      {
+        "feature": "n_dst_ports",
+        "description": "distinct destination ports",
+        "value": "1",
+        "baseline_median": "2",
+        "contribution": 0.6724
+      }
+    ],
+    "explanation": "total bytes sent out by the internal host = 40 B (baseline median 20.3 KB); total bytes received = 100 B (baseline median 414.2 KB); number of connections = 1 (baseline median 26); share of DNS lookups that failed (NXDOMAIN) = 100% (baseline median 0%); distinct destination ports = 1 (baseline median 2)"
+  },
+  {
+    "rank": 19,
+    "alert_id": "10.0.0.53 -> failed DNS lookups (NXDOMAIN)",
+    "src": "10.0.0.53",
+    "target": "failed DNS lookups (NXDOMAIN)",
+    "lookalike_of": null,
+    "risk_score": 99.55,
+    "scored_by": "novelty slot (isolation_forest)",
+    "n_connections": 2,
+    "first_seen": "2025-12-01T09:58:36.913073063+00:00",
+    "last_seen": "2025-12-01T16:56:15.511316061+00:00",
+    "bytes_out": "80 B",
+    "bytes_in": "200 B",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "C8520d85ba083657e9",
+      "Caf55c8f5d5c281470"
+    ],
+    "sample_queries": [
+      "githb.com"
+    ],
+    "indicators": [],
+    "shap_reasons": [
+      {
+        "feature": "bytes_out",
+        "description": "total bytes sent out by the internal host",
+        "value": "80 B",
+        "baseline_median": "20.3 KB",
+        "contribution": 1.2302
+      },
+      {
+        "feature": "bytes_in",
+        "description": "total bytes received",
+        "value": "200 B",
+        "baseline_median": "414.2 KB",
+        "contribution": 1.1583
+      },
+      {
+        "feature": "n_conn",
+        "description": "number of connections",
+        "value": "2",
+        "baseline_median": "26",
+        "contribution": 0.8759
+      },
+      {
+        "feature": "nxdomain_ratio",
+        "description": "share of DNS lookups that failed (NXDOMAIN)",
+        "value": "100%",
+        "baseline_median": "0%",
+        "contribution": 0.8377
+      },
+      {
+        "feature": "domain_randomness",
+        "description": "how random the domain name looks (freq.py-style, DGA)",
+        "value": "3.39",
+        "baseline_median": "3.08",
+        "contribution": 0.6269
+      }
+    ],
+    "explanation": "total bytes sent out by the internal host = 80 B (baseline median 20.3 KB); total bytes received = 200 B (baseline median 414.2 KB); number of connections = 2 (baseline median 26); share of DNS lookups that failed (NXDOMAIN) = 100% (baseline median 0%); how random the domain name looks (freq.py-style, DGA) = 3.39 (baseline median 3.08)"
+  },
+  {
+    "rank": 20,
+    "alert_id": "10.0.0.38 -> failed DNS lookups (NXDOMAIN)",
+    "src": "10.0.0.38",
+    "target": "failed DNS lookups (NXDOMAIN)",
+    "lookalike_of": null,
+    "risk_score": 99.33,
+    "scored_by": "novelty slot (isolation_forest)",
+    "n_connections": 3,
+    "first_seen": "2025-12-01T10:53:41.779429913+00:00",
+    "last_seen": "2025-12-01T13:46:35.088253975+00:00",
+    "bytes_out": "120 B",
+    "bytes_in": "300 B",
+    "dst_ips": [
+      "10.0.0.2"
+    ],
+    "dst_ports": [
+      53
+    ],
+    "sample_uids": [
+      "Cbacac82714dc92bef",
+      "C016e89fc1315855b4",
+      "C436bec7ed580688ba"
+    ],
+    "sample_queries": [
+      "printer-3f.corp.local"
+    ],
+    "indicators": [],
+    "shap_reasons": [
+      {
+        "feature": "dns_entropy",
+        "description": "randomness of DNS subdomains (entropy)",
+        "value": "3.12",
+        "baseline_median": "0.75",
+        "contribution": 1.4137
+      },
+      {
+        "feature": "bytes_out",
+        "description": "total bytes sent out by the internal host",
+        "value": "120 B",
+        "baseline_median": "20.3 KB",
+        "contribution": 1.0077
+      },
+      {
+        "feature": "bytes_in",
+        "description": "total bytes received",
+        "value": "300 B",
+        "baseline_median": "414.2 KB",
+        "contribution": 0.9572
+      },
+      {
+        "feature": "n_conn",
+        "description": "number of connections",
+        "value": "3",
+        "baseline_median": "26",
+        "contribution": 0.7569
+      },
+      {
+        "feature": "nxdomain_ratio",
+        "description": "share of DNS lookups that failed (NXDOMAIN)",
+        "value": "100%",
+        "baseline_median": "0%",
+        "contribution": 0.7206
+      }
+    ],
+    "explanation": "randomness of DNS subdomains (entropy) = 3.12 (baseline median 0.75); total bytes sent out by the internal host = 120 B (baseline median 20.3 KB); total bytes received = 300 B (baseline median 414.2 KB); number of connections = 3 (baseline median 26); share of DNS lookups that failed (NXDOMAIN) = 100% (baseline median 0%)"
+  }
+]
