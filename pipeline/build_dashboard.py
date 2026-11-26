@@ -48,7 +48,9 @@ header{display:flex;align-items:center;gap:14px;padding:13px 24px;border-bottom:
 .stg.on .sv{color:var(--acc2)}.stg.ex .sv{color:var(--cred)}.stg.ai .sv{color:var(--c2)}
 .far{color:var(--mut2);padding:0 2px;flex:0 0 auto;font-size:13px}
 /* kpis */
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:16px 24px 4px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:16px 24px 4px}
+.kpi .v{transition:color .3s}.kpi.bump{animation:bump .5s}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
 .kpi{background:linear-gradient(180deg,var(--surface),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;box-shadow:var(--shadow)}
 .kpi .v{font-size:25px;font-weight:750;letter-spacing:-.5px;line-height:1.1}
 .kpi .l{color:var(--mut);font-size:11.5px;margin-top:3px}
@@ -134,7 +136,34 @@ td.mono{color:#9fb3d9;font-size:11px}
 .bd.tp{border-color:var(--crit);color:var(--crit)}.bd.fp{border-color:var(--low);color:var(--low)}
 .bd.on.tp{background:var(--crit);color:#fff}.bd.on.fp{background:var(--low);color:#06101f}
 select{width:100%;margin-top:10px;background:var(--bg2);color:var(--txt);border:1px solid var(--line2);border-radius:9px;padding:9px;font:inherit}
-svg text{fill:var(--txt)}
+svg text{fill:var(--txt);pointer-events:none}
+/* animated pipeline strip */
+.stg{opacity:0;transform:translateY(6px);animation:rise .5s ease forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.stg.sweep{position:relative}
+.stg.sweep::after{content:"";position:absolute;inset:-6px -3px;border-radius:9px;background:radial-gradient(60% 120% at 50% 50%,rgba(79,140,255,.18),transparent 70%);opacity:0;animation:sweep 1s ease}
+@keyframes sweep{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+.far{opacity:.5;animation:fadein .6s ease forwards}@keyframes fadein{to{opacity:.8}}
+/* chat */
+.chatlog{padding:6px 18px 2px;max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.chatlog:empty{display:none}
+.msg{display:flex;gap:10px;max-width:92%}
+.msg .av{flex:0 0 26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:700;margin-top:1px}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg.user .av{background:var(--surface3);color:var(--txt2)}
+.msg.ai .av{background:linear-gradient(135deg,var(--acc),#8a5bff);color:#fff}
+.bub{padding:10px 13px;border-radius:12px;font-size:13.5px;line-height:1.55;white-space:pre-wrap}
+.msg.user .bub{background:var(--acc);color:#061024;border-bottom-right-radius:4px}
+.msg.ai .bub{background:var(--surface2);border:1px solid var(--line);color:var(--txt2);border-bottom-left-radius:4px}
+.cur::after{content:"▋";color:var(--acc);animation:blink 1s steps(1) infinite}@keyframes blink{50%{opacity:0}}
+.starters{display:flex;flex-wrap:wrap;gap:6px;padding:10px 18px}
+.starters .tag{cursor:pointer}.starters .tag:hover{border-color:var(--acc);color:var(--txt2)}
+.askbar{display:flex;gap:9px;align-items:center;padding:12px 18px 16px;border-top:1px solid var(--line)}
+.askbar input{flex:1;background:var(--bg2);color:var(--txt);border:1px solid var(--line2);border-radius:10px;padding:12px 14px;font:inherit}
+.askbar input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(79,140,255,.15)}
+.mode{font-size:10px;font-weight:700;letter-spacing:.4px;padding:2px 8px;border-radius:999px;margin-left:8px;text-transform:uppercase}
+.mode.live{color:var(--low);border:1px solid var(--low)}.mode.demo{color:var(--mut);border:1px solid var(--line2)}
+circle[data-host]{cursor:pointer;transition:filter .15s}circle[data-host]:hover{filter:brightness(1.25)}
 @media (max-width:1050px){main{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style></head><body>
 <header>
@@ -157,12 +186,13 @@ svg text{fill:var(--txt)}
   <details class="lib"><summary>Hunt coverage · hits today</summary><div id="lib" style="margin-top:10px"></div></details>
  </section>
  <section>
-  <div class="card pad" style="margin-bottom:16px">
-   <h3>Ask the network · answered from the stored ML + explainability + hunt output</h3>
-   <div class="ask"><input id="q" placeholder="What abnormal behaviour happened on the network today?">
-    <button class="btn pri" onclick="askQ()">Ask</button></div>
-   <div class="presets" id="presets"></div>
-   <div id="ans" class="answer"></div>
+  <div class="card" style="margin-bottom:16px">
+   <div class="pad" style="padding-bottom:0"><h3 style="margin-bottom:4px">Ask the network<span class="mode" id="chatmode"></span></h3>
+    <div class="muted">Answers come only from the stored ML + explainability + hunt output — never from raw logs.</div></div>
+   <div class="chatlog" id="chatlog"></div>
+   <div class="starters" id="presets"></div>
+   <div class="askbar"><input id="q" placeholder="Ask about today's activity…" autocomplete="off">
+    <button class="btn pri" id="sendb" onclick="askQ()">Send</button></div>
   </div>
   <div class="card">
    <div class="ch2"><div class="ring" id="cring"></div><div><div class="id" id="cid"></div><div class="big" id="ctitle"></div></div></div>
@@ -196,13 +226,16 @@ $("day").textContent=D.day; $("model").textContent=D.model; if(D.llm_model)$("ll
  ["Ask","question","plain language",""],
  ["LLM answer",(MET.llm_short||"qwen3"),"local · cites ids","ai"],
  ["LLM judge",(MET.verdict||"faithfulness"),"a 2nd model grades","ai"]];
- $("flow").innerHTML=S.map((s,i)=>`<div class="stg ${s[3]}"><div class="sn">${s[0]}</div><div class="sv">${s[1]}</div><div class="sd">${s[2]}</div></div>`+(i<S.length-1?'<div class="far">→</div>':'')).join("")})();
+ $("flow").innerHTML=S.map((s,i)=>`<div class="stg ${s[3]}" style="animation-delay:${i*55}ms"><div class="sn">${s[0]}</div><div class="sv">${s[1]}</div><div class="sd">${s[2]}</div></div>`+(i<S.length-1?'<div class="far">→</div>':'')).join("");
+ const st=[...document.querySelectorAll('.stg')];let si=0;   // a highlight that sweeps the pipeline, left to right
+ setInterval(()=>{st.forEach(x=>x.classList.remove('sweep'));const x=st[si%st.length];if(x){void x.offsetWidth;x.classList.add('sweep')}si++},720)})();
 
 /* kpis */
 const crit=D.cases.filter(c=>c.severity==="critical").length;
 $("kpis").innerHTML=[[D.hosts_scored,"hosts scored"],[D.findings_total,"hunt hits (12 hunts)"],
- [D.cases.length,"open cases"],[crit,"critical",1],[D.findings_suppressed,"auto-suppressed"]]
- .map(([v,l,c])=>`<div class="kpi ${c?'crit':''}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+ [D.cases.length,"open cases"],[crit,"critical",1],[D.findings_suppressed,"auto-suppressed"],
+ ['<span id="ntri">0</span>',"triaged today",0,"tri"]]
+ .map(([v,l,c,k])=>`<div class="kpi ${c?'crit':''}" ${k?`id="kpi-${k}"`:''}><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
 const m=MET.detection||{},rb=[];
 if(m.techniques_detected!=null)rb.push(["good",`<b>${m.techniques_detected}/${m.techniques_total}</b>&nbsp;attack techniques detected`]);
 if(m.compromised_case_rank)rb.push(["crit",`compromised host ranked&nbsp;<b>#${m.compromised_case_rank}</b>`]);
@@ -260,7 +293,10 @@ function tri(c){const t=T[c.case_id];
   <select id="reason"><option>Reason: confirmed malicious (EDR / host evidence)</option><option>Known admin activity (change ticket)</option><option>Benign software / update agent</option><option>Needs more data</option></select>
   <div class="muted" style="margin-top:9px">Labels feed <span class="mono">train_feedback.py</span> → XGBoost re-ranks tomorrow's queue. <a href="#" onclick="exportCSV();return false">Export labels.csv</a></div></div>`}
 function mark(l){const c=D.cases[cur];labels[c.case_id]=l;renderTab();queue();
+ const t=$("ntri");if(t){t.textContent=Object.keys(labels).length;const k=$("kpi-tri");if(k){k.classList.remove("bump");void k.offsetWidth;k.classList.add("bump")}}
  if(LIVE)fetch("/api/label",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({case_id:c.case_id,host:c.hosts[0].name,label:l,reason:($("reason")||{}).value||""})})}
+function focusHost(name){const c=D.cases[cur];const hs=c.hosts.filter(h=>h.explanations&&h.explanations.length);const i=hs.findIndex(h=>h.name===name);if(i<0)return;
+ tab='explain';curHost=i;$("tabrow").querySelectorAll("span").forEach(x=>x.classList.toggle("on",x.dataset.t=='explain'));renderTab()}
 
 /* explainability */
 function explPanel(c){const hs=c.hosts.filter(h=>h.explanations&&h.explanations.length).slice(0,4);if(curHost>=hs.length)curHost=0;
@@ -303,23 +339,39 @@ function graph(c){$("tabc").innerHTML='<svg id="g" width="100%" height="380" vie
   s+=`<text x="${(x1+x2)/2}" y="${(y1+y2)/2-5}" text-anchor="middle" style="font-size:10px;fill:${e.c};font-weight:700">${e.hunt}</text>`});
  Object.entries(pos).forEach(([n,p])=>{const h=c.hosts.find(x=>x.name===n);const isExt=ext.includes(n);const isCl=/hosts$/.test(n);
   const fill=isExt?"#241a3a":h&&h.hunt_score>0?"#2a1522":"#14203a";const st=isExt?"#b98bff":h&&h.hunt_score>0?"#ff5c78":"#4f8cff";
-  s+=`<circle cx="${p.x}" cy="${p.y}" r="22" fill="${fill}" stroke="${st}" stroke-width="2" ${isCl?'stroke-dasharray="4 3"':''}/>`;
+  const click=(h&&h.explanations&&h.explanations.length)?`data-host="${esc(n)}" onclick="focusHost('${String(n).replace(/['\\]/g,'')}')"`:'';
+  s+=`<circle cx="${p.x}" cy="${p.y}" r="22" fill="${fill}" stroke="${st}" stroke-width="2" ${isCl?'stroke-dasharray="4 3"':''} ${click}/>`;
   s+=`<text x="${p.x}" y="${p.y+4}" text-anchor="middle" style="font-size:${isExt?9:10.5}px;font-weight:700">${isExt?'C2':isCl?n.split(' ')[0]:n}</text>`;
   s+=`<text x="${p.x}" y="${p.y+37}" text-anchor="middle" style="fill:#8491ab;font-size:10px">${isExt?n.replace(/^(.{16}).+$/,"$1…"):isCl?'NTLM targets':(h&&!p.crowd?h.role:'')}</text>`});
  if(!lines.length)s+=`<text x="320" y="190" text-anchor="middle" style="fill:#8491ab">Single-host case — no lateral-movement edges</text>`;
  $("g").innerHTML=s}
 
-/* ask the network */
+/* ask the network — a multi-turn chat. Live: the LLM (Ollama) answers over the store. Static: the recorded answers play back. */
 const PRESETS=["What abnormal behaviour happened on the network today?","Which hosts should I investigate first, and why did the model flag them?","Is there any sign of credential theft or lateral movement?"];
-$("presets").innerHTML=PRESETS.map(p=>`<span class="tag" onclick="$('q').value=this.textContent;askQ()">${p}</span>`).join("");
-function showAnswer(r){const j=r.judge||{};const vc=j.verdict==="pass"?"var(--low)":j.verdict==="fail"?"var(--crit)":"var(--mut)";
- $("ans").innerHTML=`<div>${esc(r.answer)}</div><div class="jg"><span class="chip">answered by <b>${esc(String(r.model||"-").split(" (")[0])}</b>${r.latency_s?` · ${r.latency_s}s`:""}</span>
- <span class="chip" style="border-color:${vc}">LLM judge <b style="color:${vc}">&nbsp;${esc(j.verdict||"n/a")}</b>${j.faithfulness?` · faith ${j.faithfulness}/5 · rel ${j.relevance}/5 · comp ${j.completeness}/5 · act ${j.actionability}/5`:""}</span>
- ${(j.unsupported_claims||[]).length?`<span class="chip" style="border-color:var(--crit)">unsupported: ${esc(j.unsupported_claims.join(" | "))}</span>`:""}</div>`}
-function askQ(){const q=$("q").value.trim();if(!q)return;
- if(!LIVE){if(window.QA&&QA[q])showAnswer(QA[q]);else $("ans").textContent="Static page — start the lab (docker compose up) to ask free-form questions. The preset questions have stored answers.";return}
- $("ans").textContent="Retrieving today's top behaviours from the store and asking the LLM …";
- fetch("/api/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})}).then(r=>r.json()).then(showAnswer).catch(e=>$("ans").textContent="error: "+e)}
+$("presets").innerHTML=PRESETS.map(p=>`<span class="tag" onclick="askQ(this.textContent)">${esc(p)}</span>`).join("");
+$("chatmode").className="mode "+(LIVE?"live":"demo");
+$("chatmode").textContent=LIVE?("live · "+String(D.llm_model||"qwen3").split(" (")[0]):"recorded demo";
+const chat=[];let busy=false;
+function scrollChat(){const l=$("chatlog");l.scrollTop=l.scrollHeight}
+function bubble(role){const m=document.createElement("div");m.className="msg "+role;
+ m.innerHTML=`<div class="av">${role=="user"?"You":"◆"}</div><div class="bub"></div>`;
+ $("chatlog").appendChild(m);scrollChat();return m.querySelector(".bub")}
+function typeOut(el,text,meta){el.classList.add("cur");let i=0;const step=Math.max(1,Math.round(text.length/90));
+ (function go(){i+=step;el.textContent=text.slice(0,i);scrollChat();
+  if(i<text.length)setTimeout(go,16);else{el.classList.remove("cur");el.textContent=text;if(meta)el.insertAdjacentHTML("beforeend",meta);busy=false;scrollChat()}})()}
+function chips(r){const j=r.judge||{};if(!r.model&&!j.verdict)return"";
+ const vc=j.verdict=="pass"?"var(--low)":j.verdict=="fail"?"var(--crit)":"var(--mut)";
+ return `<div class="jg" style="margin-top:9px"><span class="chip">${esc(String(r.model||"qwen3").split(" (")[0])}${r.latency_s?` · ${r.latency_s}s`:""}</span>`+
+  (j.verdict?`<span class="chip" style="border-color:${vc}">LLM judge <b style="color:${vc}">&nbsp;${esc(j.verdict)}</b>${j.faithfulness?` · faith ${j.faithfulness}/5`:""}</span>`:"")+
+  ((j.unsupported_claims||[]).length?`<span class="chip" style="border-color:var(--crit)">unsupported: ${esc(j.unsupported_claims.join(" | "))}</span>`:"")+`</div>`}
+function askQ(preset){if(busy)return;const q=String(preset||$("q").value).trim();if(!q)return;$("q").value="";
+ bubble("user").textContent=q;chat.push({role:"user",content:q});busy=true;const ab=bubble("ai");ab.classList.add("cur");ab.textContent="…";
+ if(LIVE){fetch("/api/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q,history:chat.slice(0,-1)})})
+   .then(r=>r.json()).then(r=>{chat.push({role:"assistant",content:r.answer});ab.classList.remove("cur");typeOut(ab,r.answer,chips(r))})
+   .catch(e=>{ab.classList.remove("cur");ab.textContent="error: "+e;busy=false})}
+ else{const r=QA[q];ab.classList.remove("cur");
+  if(r){chat.push({role:"assistant",content:r.answer});typeOut(ab,r.answer,chips(r)+`<div class="muted" style="margin-top:6px">Recorded answer · run the lab for a live chat.</div>`)}
+  else{const t="This is the static demo — I can replay the recorded answers above, so tap a suggested question. Run the lab locally (docker compose up) for a live chat that answers any question from today's stored results.";chat.push({role:"assistant",content:t});typeOut(ab,t)}}}
 $("q").addEventListener("keydown",e=>{if(e.key==="Enter")askQ()});
 function exportCSV(){const rows=[["case_id","host","label","reason","analyst"]];D.cases.forEach(c=>{if(labels[c.case_id])c.hosts.filter(h=>h.hunt_score>0||c.hosts.length==1).forEach(h=>rows.push([c.case_id,h.name,labels[c.case_id],"dashboard","analyst"]))});
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));a.download="labels.csv";a.click()}

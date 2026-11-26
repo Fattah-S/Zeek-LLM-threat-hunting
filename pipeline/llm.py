@@ -34,10 +34,16 @@ def wait_for(models, seconds):
     return False
 
 
-def chat(model, system, user, schema=None, temperature=0.1, timeout=900):
-    """One chat call. With schema, Ollama constrains the output to that JSON schema."""
+def chat(model, system, user, schema=None, temperature=0.1, timeout=900, history=None):
+    """One chat call. history: prior [{role, content}] turns for a multi-turn conversation.
+    With schema, Ollama constrains the output to that JSON schema."""
+    msgs = [{"role": "system", "content": system}]
+    for m in history or []:
+        if m.get("role") in ("user", "assistant") and m.get("content"):
+            msgs.append({"role": m["role"], "content": str(m["content"])})
+    msgs.append({"role": "user", "content": user})
     body = {"model": model, "stream": False, "options": {"temperature": temperature, "num_ctx": 16384},
-            "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
+            "messages": msgs}
     if schema:
         body["format"] = schema
     t = time.time()

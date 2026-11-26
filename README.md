@@ -4,7 +4,9 @@
 
 ![NSM Hunt Console — the analyst dashboard](docs/dashboard.png)
 
-*The Hunt Console: a priority queue of ranked cases on the left, and a tabbed case detail (Overview, Explainability, Timeline, Attack path) on the right. The pipeline strip across the top shows each stage with its live counts; the ribbon under it shows the lab's detection scores.*
+*The Hunt Console: a priority queue of ranked cases on the left, and a tabbed case detail (Overview, Explainability, Timeline, Attack path) on the right. The pipeline strip across the top shows each stage with its live counts; the ribbon under it shows the lab's detection scores. "Ask the network" is a chat — click a host in the attack path to jump to its explanation, and press TP/FP to feed the re-ranker.*
+
+**[Live static demo →](https://fattah-s.github.io/Zeek-LLM-threat-hunting/)** — a hosted snapshot of a real attack day. The chat there replays recorded answers (there is no server behind a static page). To chat **live** — ask any question and have the open-source LLM answer it from today's results — run the lab below; the chat is served at `http://localhost:8080`.
 
 The pipeline order is fixed, and the LLM sits at the very end as the translator, never as the detector:
 
@@ -32,7 +34,7 @@ cd zeek-llm-threat-hunting
 docker compose up --build
 ```
 
-Open **http://localhost:8080**. Over a few minutes the page fills in as each stage finishes: the network generates traffic, the Zeek sensor turns packets into logs, the pipeline scores the hosts, and the dashboard shows the ranked hunts with their plain-language explanations. Then type a question into **Ask the network**.
+Open **http://localhost:8080**. Over a few minutes the page fills in as each stage finishes: the network generates traffic, the Zeek sensor turns packets into logs, the pipeline scores the hosts, and the dashboard shows the ranked hunts with their plain-language explanations. Then **chat** with it in *Ask the network* — this is a live, multi-turn conversation: each question (and your follow-ups) is answered by the local LLM from the day's stored results, with the second model's judge grade shown under each answer.
 
 The open-source LLMs run in a local **Ollama** container, so no log data ever leaves the machine. The models download themselves on first run (about 6 GB); until they are ready, the LLM answer falls back to a template and the dashboard says so.
 

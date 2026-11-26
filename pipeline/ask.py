@@ -61,7 +61,7 @@ def template_answer(ctx):
     return "\n".join(lines)
 
 
-def ask(question, top=5, db=store.DB, use_llm=True):
+def ask(question, history=None, top=5, db=store.DB, use_llm=True):
     built = build_context(top, db)
     if not built:
         return {"answer": "No scored day in the store yet. The sensor and pipeline are still running.", "model": None}
@@ -69,7 +69,7 @@ def ask(question, top=5, db=store.DB, use_llm=True):
     user = f"QUESTION: {question}\n\nCONTEXT (JSON):\n{json.dumps(ctx, indent=1)}"
     if use_llm and llm.available(llm.LLM_MODEL):
         try:
-            answer, secs = llm.chat(llm.LLM_MODEL, SYSTEM, user)
+            answer, secs = llm.chat(llm.LLM_MODEL, SYSTEM, user, history=history)
             return {"answer": answer, "model": llm.LLM_MODEL, "latency_s": round(secs, 1), "context": ctx, "run_id": run_id}
         except Exception as e:
             err = str(e)

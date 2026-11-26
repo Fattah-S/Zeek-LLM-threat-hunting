@@ -78,8 +78,11 @@ class H(BaseHTTPRequestHandler):
         if self.headers.get("Origin") and self.headers["Origin"] != f"http://{self.headers.get('Host')}":
             return self.send(403, '{"error":"cross-origin"}')
         if self.path == "/api/ask":
-            q = str(self.body().get("question", ""))[:500]
-            r = ask.ask(q)
+            b = self.body()
+            q = str(b.get("question", ""))[:500]
+            hist = [{"role": m.get("role"), "content": str(m.get("content", ""))[:4000]}
+                    for m in (b.get("history") or []) if isinstance(m, dict) and m.get("role") in ("user", "assistant")][-8:]
+            r = ask.ask(q, history=hist)
             r["judge"] = judge.judge(q, r.get("context"), r["answer"]) if r.get("context") else {}
             if r.get("run_id"):
                 store.save_qa(r["run_id"], q, r["answer"], r["model"], r["judge"], {}, r["context"])
