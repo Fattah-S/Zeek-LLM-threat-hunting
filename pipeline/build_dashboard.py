@@ -164,6 +164,29 @@ svg text{fill:var(--txt);pointer-events:none}
 .mode{font-size:10px;font-weight:700;letter-spacing:.4px;padding:2px 8px;border-radius:999px;margin-left:8px;text-transform:uppercase}
 .mode.live{color:var(--low);border:1px solid var(--low)}.mode.demo{color:var(--mut);border:1px solid var(--line2)}
 circle[data-host]{cursor:pointer;transition:filter .15s}circle[data-host]:hover{filter:brightness(1.25)}
+/* policy / threat tags + zone map */
+.bpol{font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;background:var(--crit);color:#fff}
+.bth{font-size:10px;padding:1px 7px;border-radius:5px;border:1px solid var(--c2);color:var(--c2)}
+/* context button, toggle, modal, toast */
+.ctxbtn{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:9px;border:1px solid var(--acc);color:var(--acc2);background:rgba(79,140,255,.08);cursor:pointer;font-size:12px;font-weight:650}
+.ctxbtn:hover{background:rgba(79,140,255,.16)}
+.toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--mut);user-select:none}
+.sw{width:34px;height:19px;border-radius:999px;background:var(--surface3);border:1px solid var(--line2);position:relative;transition:background .15s;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:1px;left:1px;width:15px;height:15px;border-radius:50%;background:var(--mut);transition:left .15s}
+.sw.on{background:var(--acc)}.sw.on::after{left:16px;background:#fff}
+.modal{position:fixed;inset:0;background:rgba(5,8,13,.72);backdrop-filter:blur(3px);display:none;place-items:center;z-index:50;padding:20px}
+.modal.show{display:grid}
+.sheet{width:min(560px,94vw);max-height:86vh;overflow:auto;background:var(--surface);border:1px solid var(--line2);border-radius:14px;box-shadow:0 24px 70px -24px #000}
+.sheet .hd{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line);font-weight:700}
+.sheet .bd2{padding:16px 18px}
+.drop{border:1.5px dashed var(--line2);border-radius:12px;padding:22px;text-align:center;color:var(--mut);cursor:pointer;margin:12px 0}
+.drop:hover{border-color:var(--acc);color:var(--txt2)}
+.x{margin-left:auto;cursor:pointer;color:var(--mut);font-size:20px;line-height:1}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--line2);border-radius:10px;padding:10px 16px;font-size:13px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.zlist{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.zrow{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
+.crit{display:inline-flex;gap:2px}.crit i{width:6px;height:6px;border-radius:50%;background:var(--crit);display:inline-block}.crit i.off{background:var(--line2)}
 @media (max-width:1050px){main{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style></head><body>
 <header>
@@ -173,6 +196,7 @@ circle[data-host]{cursor:pointer;transition:filter .15s}circle[data-host]:hover{
  <span class="chip">ML <b id="model">Isolation Forest</b></span>
  <span class="chip">LLM <b id="llmname">Ollama</b> · self-hosted</span>
  <span class="chip">Hunt day <b id="day"></b></span>
+ <button class="ctxbtn" id="ctxbtn" onclick="openCtx()" title="Upload your network context (zones, policy, threat model)">◇ Network context</button>
 </header>
 <div class="flow" id="flow"></div>
 <div class="kpis" id="kpis"></div>
@@ -199,11 +223,23 @@ circle[data-host]{cursor:pointer;transition:filter .15s}circle[data-host]:hover{
    <div class="chain" id="chain"></div>
    <div class="tabrow" id="tabrow">
      <span data-t="overview" class="on">Overview</span><span data-t="explain">Explainability</span>
-     <span data-t="timeline">Timeline</span><span data-t="graph">Attack path</span></div>
+     <span data-t="timeline">Timeline</span><span data-t="graph">Attack path</span><span data-t="zones" id="tab-zones">Zone map</span></div>
    <div class="tabc" id="tabc"></div>
   </div>
  </section>
 </main>
+<div class="modal" id="ctxmodal"><div class="sheet">
+ <div class="hd">◇ Network context<span class="x" onclick="closeCtx()">×</span></div>
+ <div class="bd2">
+  <div class="muted" id="ctxsummary"></div>
+  <div class="zlist" id="ctxzones"></div>
+  <label class="toggle" style="margin:6px 0 2px"><span class="sw" id="ctxsw"></span> Score with this context (zones · policy · threat model)</label>
+  <div class="drop" id="ctxdrop">Click to upload a <b>network_context.json</b><div class="muted" style="margin-top:5px">zones · allowed_flows · threat_model — see the README for the format. The pipeline reads YAML; the in-browser upload takes JSON.</div></div>
+  <input type="file" id="ctxfile" accept=".json,application/json" style="display:none">
+  <div class="muted" id="ctxmsg"></div>
+ </div>
+</div></div>
+<div class="toast" id="toast"></div>
 <script>
 const D=__DATA__, T=__TRIAGE__, LIVE=__LIVE__, QA=__QA__, MET=__METRICS__;
 const COL={"Lateral Movement":"var(--lm)","Command and Control":"var(--c2)","Credential Access":"var(--cred)","Discovery":"var(--disc)"};
@@ -273,7 +309,7 @@ function sel(i){cur=i;curHost=0;const c=D.cases[i];
   +(c.kill_chain?'<span class="pill" style="margin-left:4px;color:var(--mut)">C2 + lateral movement on the same hosts <b style="color:var(--crit)">+5</b></span>':'');
  queue();renderTab()}
 $("tabrow").querySelectorAll("span").forEach(s=>s.onclick=()=>{tab=s.dataset.t;$("tabrow").querySelectorAll("span").forEach(x=>x.classList.toggle("on",x==s));renderTab()});
-function renderTab(){const c=D.cases[cur];({overview:tri,explain:explPanel,timeline:timeline,graph:graph}[tab]||tri)(c)}
+function renderTab(){const c=D.cases[cur];({overview:tri,explain:explPanel,timeline:timeline,graph:graph,zones:zonemap}[tab]||tri)(c)}
 
 /* overview = triage */
 function tri(c){const t=T[c.case_id];
@@ -311,8 +347,8 @@ function explPanel(c){const hs=c.hosts.filter(h=>h.explanations&&h.explanations.
 function timeline(c){$("tabc").innerHTML=`<table><thead><tr><th>Time</th><th>Hunt</th><th>Source → target</th><th>ATT&CK</th><th>What Zeek saw</th><th>Evidence</th></tr></thead><tbody>
  ${c.findings.map(f=>`<tr><td class="mono">${hhmm(f.first_ts)}</td>
   <td><span class="hid" style="background:${COL[f.tactic]}">${f.hunt}</span></td>
-  <td><b>${esc(f.src_name)}</b> → ${esc(f.dst_name)}</td><td class="mono">${esc(f.attack.split(",")[0])}</td>
-  <td>${esc(f.detail)}</td><td class="mono">${esc(f.evidence_uids[0]||'')}${f.evidence_uids.length>1?` +${f.evidence_uids.length-1}`:''}</td></tr>`).join("")}
+  <td><b>${esc(f.src_name)}</b> → ${esc(f.dst_name)}${f.zone_src?`<div class="muted" style="font-size:10px">${esc(f.zone_src)} → ${esc(f.zone_dst)}</div>`:''}</td><td class="mono">${esc(f.attack.split(",")[0])}</td>
+  <td>${esc(f.detail)} ${f.policy=='violation'?'<span class="bpol">policy</span>':''} ${f.threat_name?`<span class="bth">${esc(f.threat_name)}</span>`:''}</td><td class="mono">${esc(f.evidence_uids[0]||'')}${f.evidence_uids.length>1?` +${f.evidence_uids.length-1}`:''}</td></tr>`).join("")}
  </tbody></table>`}
 
 /* attack path */
@@ -376,6 +412,59 @@ $("q").addEventListener("keydown",e=>{if(e.key==="Enter")askQ()});
 function exportCSV(){const rows=[["case_id","host","label","reason","analyst"]];D.cases.forEach(c=>{if(labels[c.case_id])c.hosts.filter(h=>h.hunt_score>0||c.hosts.length==1).forEach(h=>rows.push([c.case_id,h.name,labels[c.case_id],"dashboard","analyst"]))});
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));a.download="labels.csv";a.click()}
 
+/* ---- network context: zones, policy, threat model (scoring + zone map + upload) ---- */
+let NC=D.netcontext||null, CTXON=!!NC;
+function ipInt(ip){const p=String(ip).split('.');if(p.length!=4||p.some(x=>x===''||isNaN(x)))return null;return(((+p[0])*16777216)+((+p[1])*65536)+((+p[2])*256)+(+p[3]))>>>0}
+function inCidr(ip,cidr){const [a,b]=cidr.split('/');const ii=ipInt(ip),ni=ipInt(a);if(ii==null||ni==null)return false;const m=(+b)==0?0:(0xffffffff*Math.pow(2,32-(+b)))>>>0&0xffffffff;const mask=(+b)==0?0:(~((1<<(32-(+b)))-1))>>>0;return((ii&mask)>>>0)===((ni&mask)>>>0)}
+function zoneOf(ip,nc){if(ipInt(ip)==null)return 'external';let best=null,bl=-1;(nc.zones||[]).forEach(z=>(z.cidrs||[]).forEach(c=>{const pl=+(c.split('/')[1]);if(inCidr(ip,c)&&pl>bl){bl=pl;best=z.name}}));return best||'unknown'}
+function zCrit(nc,zn){const z=(nc.zones||[]).find(z=>z.name==zn);return z?(z.criticality||1):1}
+function critOf(ip,nc){const a=(nc.critical_assets||[]).find(a=>a.ip==ip);if(a)return a.criticality;return zCrit(nc,zoneOf(ip,nc))}
+function threatOf(hunt,nc){return(nc.threat_model||[]).find(t=>(t.hunts||[]).includes(hunt))}
+function annotate(nc){const vh=new Set(nc.violation_hunts||[]);const al=new Set((nc.allowed_flows||[]).map(f=>Array.isArray(f)?f[0]+'>'+f[1]:f.from+'>'+f.to));const BB={5:10,4:8,3:5,2:3,1:1,0:0};
+ D.cases.forEach(c=>{let viols=[],threats=[],critz=new Set();
+  c.findings.forEach(f=>{const zs=zoneOf(f.src,nc),zd=zoneOf(f.dst,nc);let pol=zd=='external'?'external':(al.has(zs+'>'+zd)||(zs==zd&&zs!='workstations')?'allowed':'violation');if(vh.has(f.hunt))pol='violation';
+   f.zone_src=zs;f.zone_dst=zd;f.policy=pol;const t=threatOf(f.hunt,nc);f.threat_name=t?t.name:null;
+   if(pol=='violation'){viols.push(f);if(critOf(f.dst,nc)>=3)critz.add(zd);if(t&&!threats.find(x=>x.id==t.id))threats.push({id:t.id,name:t.name,technique:t.technique})}});
+  const maxc=Math.max(0,...viols.map(f=>critOf(f.dst,nc)));
+  c._ctx={violations:viols.length,critical_zones_reached:[...critz],threats:threats,bonus:viols.length?Math.min(14,(BB[maxc]||0)+Math.min(4,threats.length)):0}})}
+function rescore(){if(NC&&CTXON){annotate(NC);D.cases.forEach(c=>{const base=c.score_base!=null?c.score_base:c.score;c.score=Math.min(100,Math.round((base+c._ctx.bonus)*10)/10)})}
+ else{D.cases.forEach(c=>{c.score=(c.score_base!=null?c.score_base:c.score);c._ctx=null;c.findings.forEach(f=>{f.policy=null;f.threat_name=null})})}
+ D.cases.forEach(c=>c.severity=c.score>=90?'critical':c.score>=75?'high':c.score>=50?'medium':'low');
+ D.cases.sort((a,b)=>b.score-a.score);cur=0;queue();sel(0)}
+function zonemap(c){if(!NC){$("tabc").innerHTML='<div class="muted">No network context loaded. Click <b>◇ Network context</b> in the header to upload your zones, policy and threat model.</div>';return}
+ const nc=NC,zs=[...nc.zones].sort((a,b)=>(b.criticality||1)-(a.criticality||1)),W=640,bh=58,top=10,H=top+zs.length*bh+16,yOf={};
+ zs.forEach((z,i)=>yOf[z.name]=top+i*bh+bh/2);
+ const ip={};c.hosts.forEach(h=>ip[h.name]=h.ip);c.findings.forEach(f=>{ip[f.src_name]=f.src;ip[f.dst_name]=f.dst});
+ const names=new Set();c.attack_path.forEach(e=>{names.add(e.src);names.add(e.dst)});c.findings.filter(f=>f.hunt[0]=='C').forEach(f=>names.add(f.dst_name));if(!names.size)c.hosts.forEach(h=>names.add(h.name));
+ const byZone={};[...names].forEach(n=>{const z=zoneOf(ip[n]||'',nc);(byZone[z]=byZone[z]||[]).push(n)});
+ const pos={};Object.entries(byZone).forEach(([z,ns])=>ns.forEach((n,i)=>pos[n]={x:120+(i+1)*((W-150)/(ns.length+1)),y:yOf[z]!=null?yOf[z]:H-bh/2}));
+ let s=`<defs>${[['v','#ff5c78'],['a','#4f8cff'],['e','#b98bff']].map(([k,col])=>`<marker id="z${k}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="${col}"/></marker>`).join("")}</defs>`;
+ zs.forEach((z,i)=>{const y=top+i*bh,col=z.criticality>=5?'#ff5c78':z.criticality>=4?'#ff9d4d':z.criticality>=3?'#ffce4d':'#2b374f';
+  s+=`<rect x="8" y="${y+4}" width="${W-16}" height="${bh-8}" rx="9" fill="${z.name=='external'?'#141019':'#111a2b'}" stroke="${col}" stroke-opacity=".45"/><text x="20" y="${y+bh/2-1}" style="font-size:12px;font-weight:700">${esc(z.name)}</text><text x="20" y="${y+bh/2+14}" style="font-size:9.5px;fill:#8491ab">crit ${z.criticality}</text>`});
+ function edge(a,b,col,mk,lab){const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,r=18,x1=a.x+dx/L*r,y1=a.y+dy/L*r,x2=b.x-dx/L*r,y2=b.y-dy/L*r;s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="2" marker-end="url(#${mk})" opacity=".9"/><text x="${(x1+x2)/2}" y="${(y1+y2)/2-4}" text-anchor="middle" style="font-size:9px;font-weight:700;fill:${col}">${lab}</text>`}
+ const seen={};c.attack_path.forEach(e=>{const k=e.src+'>'+e.dst;if(seen[k])return;seen[k]=1;const a=pos[e.src],b=pos[e.dst];if(!a||!b)return;const f=c.findings.find(x=>x.src_name==e.src&&x.dst_name==e.dst);const v=f&&f.policy=='violation';const ext=zoneOf(ip[e.dst]||'',nc)=='external';edge(a,b,v?'#ff5c78':'#4f8cff',v?'zv':'za',ext?'':e.hunt)});
+ const c2seen={};c.findings.filter(f=>f.hunt=='C2-01'||f.hunt=='C2-02').forEach(f=>{const a=pos[f.src_name],b=pos[f.dst_name];if(a&&b&&!c2seen[f.dst_name]){c2seen[f.dst_name]=1;edge(a,b,'#b98bff','ze','')}});
+ Object.entries(pos).forEach(([n,p])=>{const h=c.hosts.find(x=>x.name==n),ext=zoneOf(ip[n]||'',nc)=='external',fill=ext?'#241a3a':h&&h.hunt_score>0?'#2a1522':'#14203a',st=ext?'#b98bff':h&&h.hunt_score>0?'#ff5c78':'#4f8cff';
+  s+=`<circle cx="${p.x}" cy="${p.y}" r="17" fill="${fill}" stroke="${st}" stroke-width="2"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" style="font-size:9.5px;font-weight:700">${esc(n.length>11?n.slice(0,10)+'…':n)}</text>`});
+ s+=`<text x="${W-14}" y="${H-5}" text-anchor="end" style="font-size:9.5px;fill:#8491ab">red = breaks zone policy · blue = allowed · purple = external C2</text>`;
+ $("tabc").innerHTML=`<svg width="100%" viewBox="0 0 ${W} ${H}">${s}</svg>`+(c._ctx?`<div class="note">Context: <b>${c._ctx.violations}</b> policy violation(s)${c._ctx.critical_zones_reached.length?`, reaching <b style="color:var(--crit)">${c._ctx.critical_zones_reached.join(', ')}</b>`:''}${c._ctx.threats.length?` · matches ${c._ctx.threats.map(t=>esc(t.name)+(t.technique?' ('+esc(t.technique)+')':'')).join(', ')}`:''} → <b>+${c._ctx.bonus}</b> score.</div>`:'')}
+function openCtx(){const nc=NC,su=$("ctxsummary"),zl=$("ctxzones");
+ if(!nc){su.innerHTML="No network context loaded yet. Upload one to score by zone, policy and your threat model.";zl.innerHTML=""}
+ else{su.innerHTML=`<b>${esc(nc.name||'network')}</b> · ${nc.zones.length} zones · ${(nc.threat_model||[]).length} threat-model scenarios · ${(nc.allowed_flows||[]).length} allowed flows`;
+  zl.innerHTML=nc.zones.map(z=>`<div class="zrow"><span style="flex:1"><b>${esc(z.name)}</b> <span class="muted">${(z.cidrs||[]).join(', ')}</span></span><span class="crit">${[1,2,3,4,5].map(i=>`<i class="${i<=(z.criticality||1)?'':'off'}"></i>`).join("")}</span></div>`).join("")}
+ $("ctxsw").classList.toggle("on",CTXON);$("ctxmsg").textContent="";$("ctxmodal").classList.add("show")}
+function closeCtx(){$("ctxmodal").classList.remove("show")}
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),2600)}
+$("ctxsw").onclick=()=>{if(!NC){toast("Upload a context first");return}CTXON=!CTXON;$("ctxsw").classList.toggle("on",CTXON);rescore();if(tab=='zones')zonemap(D.cases[cur]);toast(CTXON?"Context ON — scored by zone, policy & threat model":"Context OFF — base ML + hunt score")};
+$("ctxdrop").onclick=()=>$("ctxfile").click();
+$("ctxfile").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+ rd.onload=()=>{try{const j=JSON.parse(rd.result);if(!j.zones||!j.zones.length)throw new Error("missing zones[]");
+   NC=j;CTXON=true;$("tab-zones").style.display="";$("ctxbtn").style.opacity=1;rescore();openCtx();
+   $("ctxmsg").innerHTML=`<span style="color:var(--low)">Loaded ${esc(j.name||f.name)} — queue re-scored.</span>`;toast("Network context applied");
+   if(LIVE)fetch("/api/netcontext",{method:"POST",headers:{"Content-Type":"application/json"},body:rd.result}).catch(()=>{})}
+  catch(err){$("ctxmsg").innerHTML=`<span style="color:var(--crit)">Invalid JSON context: ${esc(err.message)}</span>`}};
+ rd.readAsText(f)};
+if(NC){annotate(NC)}else{$("ctxbtn").style.opacity=.75;$("tab-zones").style.display="none"}
 sel(0);
 </script></body></html>"""
 

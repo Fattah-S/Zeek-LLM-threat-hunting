@@ -4,7 +4,7 @@
 
 ![NSM Hunt Console — the analyst dashboard](docs/dashboard.png)
 
-*The Hunt Console: a priority queue of ranked cases on the left, and a tabbed case detail (Overview, Explainability, Timeline, Attack path) on the right. The pipeline strip across the top shows each stage with its live counts; the ribbon under it shows the lab's detection scores. "Ask the network" is a chat — click a host in the attack path to jump to its explanation, and press TP/FP to feed the re-ranker.*
+*The Hunt Console: a priority queue of ranked cases on the left, and a tabbed case detail (Overview, Explainability, Timeline, Attack path, Zone map) on the right. The pipeline strip across the top shows each stage with its live counts; the ribbon under it shows the lab's detection scores. "Ask the network" is a chat — click a host in the attack path to jump to its explanation, and press TP/FP to feed the re-ranker.*
 
 **[Live static demo →](https://fattah-s.github.io/Zeek-LLM-threat-hunting/)** — a hosted snapshot of a real attack day. The chat there replays recorded answers (there is no server behind a static page). To chat **live** — ask any question and have the open-source LLM answer it from today's results — run the lab below; the chat is served at `http://localhost:8080`.
 
@@ -109,6 +109,53 @@ The detections, the ML and the explainability layer are documented in detail in 
 
 ---
 
+## Teaching it your network (network context)
+
+The ML and the hunts work on any network. Your network also has a *shape* the logs don't
+carry: which subnets are domain controllers, which hold crown-jewel data, which flows are
+normal, and which attack scenarios you actually worry about. You describe that once in a
+[`network_context.yaml`](network_context.yaml) and the platform **grounds** every hunt in it.
+
+This is **retrieval / grounding, not fine-tuning** — no model is retrained. The context is
+read at scoring time, used to re-rank and annotate cases, and injected into the LLM prompt so
+the triage reads in your network's terms.
+
+```yaml
+zones:                                  # your subnets + how critical each is (1–5)
+  - {name: domain,  cidrs: [10.0.0.8/29], criticality: 5, description: AD DCs}
+  - {name: database, cidrs: [10.0.0.30/32], criticality: 4}
+  - {name: workstations, cidrs: [10.0.1.0/24], criticality: 2}
+  - {name: external, cidrs: [0.0.0.0/0], criticality: 1}
+allowed_flows:                          # zone-to-zone flows that are normal
+  - {from: workstations, to: domain, why: Kerberos / LDAP / DNS}
+violation_hunts: [LM-01, LM-07, C2-01]  # hunts that, by zone, signal a policy break
+threat_model:                           # your scenarios, mapped to ATT&CK + the hunts that catch them
+  - {id: TM-08, name: DCSync, technique: T1003.006, hunts: [LM-07], path: "workstations -> domain"}
+critical_assets:                        # optional per-IP overrides
+  - {ip: 10.0.0.10, name: DC01, criticality: 5}
+```
+
+With context loaded the engine, per case:
+
+1. labels every flow with its **zone** and whether it **breaks the zone policy**
+   (e.g. a workstation reaching the domain zone);
+2. maps policy-violating hunts onto your **threat model** (TM-xx → ATT&CK);
+3. adds an **explainable bonus** (driven by the most critical zone a violation reaches plus the
+   number of threat-model scenarios matched, capped at +14) — so a quiet lateral move into a
+   critical zone outranks a loud-but-legitimate anomaly, and the lift is explained in your terms.
+
+**Upload it from the dashboard** — the **◇ Network context** button loads or updates the context
+in-browser, shows your zones and their criticality, toggles context scoring on/off, and (in live
+mode) posts it to the server to re-score the day. The **Zone map** tab then draws each case as
+movement across your criticality bands (red = breaks policy, blue = allowed, purple = external C2).
+
+**From the pipeline:** `hunt.py --netcontext network_context.yaml` (or set `$NSM_NETCONTEXT`);
+pass `--no-context` for the pure ML+hunt score. On the lab, context takes the compromised host
+to the top with an explained +14 and leaves ML-only noise flat — the full before/after is in
+[`results/NETWORK_CONTEXT.md`](results/NETWORK_CONTEXT.md).
+
+---
+
 ## Evaluating the answers
 
 `evaluate.py` scores the attack day against the ground truth (which the pipeline never sees) on two levels:
@@ -142,6 +189,7 @@ Public malware-traffic PCAPs (malware-traffic-analysis.net, the Stratosphere/CTU
 ```
 docker-compose.yml          the whole lab + the NSM platform, one command
 .env.example                models and network config
+network_context.yaml        your zones, flow policy and threat model (teach it your network)
 lab/                        the simulated network
   Dockerfile  entrypoint.sh  one image, ROLE picks the behaviour
   role_dc.sh  role_smb.sh  role_internet.sh  orchestrator.sh
@@ -150,6 +198,7 @@ sensor/                     Zeek sensor: merge per-host pcaps, run Zeek, emit JS
   run_sensor.sh  merge_pcaps.py  local.zeek
 pipeline/                   the NSM platform
   hunts.py hunt.py          12 hunts, Isolation Forest, explainability, case grouping
+  netcontext.py             zones / flow policy / threat-model grounding (network context)
   store.py                  SQLite store (the LLM reads only this)
   ask.py llm.py             retrieve from the store, ask the local LLM
   judge.py                  LLM-as-a-judge + algorithmic metrics

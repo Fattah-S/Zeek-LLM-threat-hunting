@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 
+import netcontext
 from explainability import TreeAttribution, _Precomputed
 from hunts import FEATURE_TEXT, FEATURES, LM_FEATURES, HuntEngine, load_day, workstation
 
@@ -85,8 +86,13 @@ def main():
     ap.add_argument("--out", default="out")
     ap.add_argument("--xgb", default=None, help="XGBoost model from train_feedback.py (ranks with analyst feedback)")
     ap.add_argument("--top", type=int, default=10)
+    ap.add_argument("--netcontext", default=None, help="network_context.yaml (zones, policy, threat model); default: $NSM_NETCONTEXT or a nearby file")
+    ap.add_argument("--no-context", action="store_true", help="ignore the network context (for the context on/off comparison)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
+    nc = netcontext.NetContext(None) if a.no_context else netcontext.load(a.netcontext)
+    if nc.enabled:
+        print(f"network context: {nc.name} ({len(nc.zones)} zones, {len(nc.threats)} threats)")
 
     load_hostnames(a.hosts or os.path.join(os.path.dirname(a.baseline.rstrip("/*")), "hosts.json"))
     dirs = sorted(glob.glob(os.path.join(a.baseline, "day*"))) or sorted(d for d in glob.glob(a.baseline) if os.path.isdir(d))
@@ -172,6 +178,14 @@ def main():
             "attack_path": [{"src": name(s_), "dst": name(d), "hunt": h} for s_, d, h in edges if s_ in members],
             "findings": cf,
         })
+    # ---- network context: annotate findings, boost policy violations / critical-zone hits, re-rank ----
+    for c in cases:
+        nc.annotate_findings(c["findings"])
+        ctx = nc.case_context(c)
+        c["context"] = ctx
+        c["score_base"] = c["score"]
+        c["score"] = min(100.0, round(c["score"] + ctx["bonus"], 1))
+        c["severity"] = "critical" if c["score"] >= 90 else "high" if c["score"] >= 75 else "medium" if c["score"] >= 50 else "low"
     cases.sort(key=lambda c: -c["score"])
     for i, c in enumerate(cases, 1):
         c["case_id"] = f"HUNT-{i:03d}"
@@ -180,6 +194,7 @@ def main():
         c["title"] = f"{lead}: " + (", ".join(names[:3]) if names else "ML anomaly only") + (f" +{len(names) - 3} more" if len(names) > 3 else "")
     out = {"model": model_name, "hunt_day": a.day, "hosts_scored": len(feats),
            "findings_total": len(findings), "findings_suppressed": len(findings) - len(live),
+           "context_enabled": nc.enabled, "netcontext": nc.to_json() if nc.enabled else None,
            "cases": cases[:a.top]}
     json.dump(out, open(os.path.join(a.out, "cases.json"), "w"), indent=2, default=float)
 

@@ -1,0 +1,111 @@
+# Network context for the lab network (10.77.0.0/24).
+#
+# This file teaches the platform about YOUR network: what the zones are, which are
+# critical, which flows between zones are normal, and which attacks you expect and how
+# they map to MITRE ATT&CK and to the hunts. It is used in three places:
+#   1. scoring  - a flow that breaks the zone policy, or a hit on a critical zone, is weighted up
+#   2. hunts    - each finding is matched to a threat in your model and its ATT&CK technique
+#   3. the LLM  - this context is injected into the prompt (grounding / RAG, NOT fine-tuning),
+#                 so answers reason about "WS zone -> DC zone breaks policy, matches T1003.006"
+#
+# Point the pipeline at it with NSM_NETCONTEXT=/path/to/network_context.yaml
+# (JSON with the same keys works too). Replace it with your own network to re-score.
+
+name: Corp lab network
+
+# --- zones: a name, the CIDRs in it, and how critical it is (1 = low, 5 = crown jewels) ---
+zones:
+  - name: domain
+    cidrs: [10.77.0.8/29]          # DC01 10.77.0.10 - Kerberos, LDAP, DNS, replication
+    criticality: 5
+    description: Active Directory domain controllers. Compromise = domain compromise.
+  - name: management
+    cidrs: [10.77.0.56/29]         # SCCM01 10.77.0.60 - software deployment
+    criticality: 4
+    description: Deployment / management servers. Push software to every workstation.
+  - name: servers
+    cidrs: [10.77.0.16/28]         # FS01 10.77.0.20 - file server
+    criticality: 3
+    description: Internal file and application servers.
+  - name: workstations
+    cidrs: [10.77.0.96/27]         # WS-01..05 10.77.0.101-105
+    criticality: 2
+    description: Employee workstations.
+  - name: external
+    cidrs: [10.77.0.240/28, 0.0.0.0/0]   # internet + C2; 0.0.0.0/0 catches anything unmatched
+    criticality: 1
+    description: The internet and anything outside the company.
+
+# --- allowed zone-to-zone flows. Anything internal that is NOT listed here is a policy violation. ---
+# (external egress is allowed so normal web browsing is not flagged; C2 is caught by the C2 hunts.)
+allowed_flows:
+  - {from: workstations, to: servers,  why: file shares}
+  - {from: workstations, to: domain,   why: Kerberos / LDAP / DNS logon}
+  - {from: workstations, to: external, why: web browsing (via the proxy)}
+  - {from: servers,      to: domain,   why: service logon}
+  - {from: servers,      to: external, why: updates}
+  - {from: management,   to: workstations, why: software deployment}
+  - {from: management,   to: servers,      why: software deployment}
+  - {from: management,   to: domain,       why: service logon}
+
+# --- techniques that are a policy violation wherever they happen (who/what, not just which zone) ---
+# These are the hunts whose mere presence breaks policy, even on an "allowed" zone pair
+# (e.g. a workstation may talk to the DC for Kerberos, but it may never run DCSync against it).
+violation_hunts: [LM-01, LM-02, LM-03, LM-05, LM-06, LM-07, C2-01, C2-02, C2-03, C2-04]
+
+# --- threat model: the attacks you expect, each tied to ATT&CK, the zones it crosses, and the hunt ---
+threat_model:
+  - id: TM-01
+    name: Workstation beaconing to C2
+    technique: T1071.001
+    hunts: [C2-01, C2-04]
+    path: workstations -> external
+    note: A workstation calls out to attacker infrastructure on a regular cadence.
+  - id: TM-02
+    name: C2 tunnel / exfil channel
+    technique: T1572
+    hunts: [C2-02]
+    path: workstations -> external
+  - id: TM-03
+    name: Command-and-control via DGA
+    technique: T1568.002
+    hunts: [C2-03]
+    path: workstations -> external
+  - id: TM-04
+    name: Internal reconnaissance
+    technique: T1046
+    hunts: [LM-08]
+    path: workstations -> servers, workstations -> domain
+  - id: TM-05
+    name: Kerberoasting of service accounts
+    technique: T1558.003
+    hunts: [LM-06]
+    path: workstations -> domain
+    note: A workstation should never request RC4 service tickets in bulk.
+  - id: TM-06
+    name: Lateral movement by remote service (PsExec)
+    technique: T1021.002
+    hunts: [LM-01]
+    path: workstations -> workstations, workstations -> servers
+    note: Workstation-to-workstation admin is never normal here.
+  - id: TM-07
+    name: Pass-the-hash fan-out
+    technique: T1550.002
+    hunts: [LM-05]
+    path: workstations -> workstations
+  - id: TM-08
+    name: DCSync credential theft
+    technique: T1003.006
+    hunts: [LM-07]
+    path: workstations -> domain
+    note: Only domain controllers may replicate the directory. From anywhere else = theft.
+  - id: TM-09
+    name: Remote code execution (WMI / scheduled task)
+    technique: T1047 / T1053.005
+    hunts: [LM-02, LM-03]
+    path: workstations -> servers, workstations -> domain
+
+# critical_assets: optional per-host overrides (name/role already come from hostnames.json)
+critical_assets:
+  - {ip: 10.77.0.10, name: DC01, criticality: 5, note: domain controller + krbtgt}
+  - {ip: 10.77.0.60, name: SCCM01, criticality: 4, note: can push code to every host}

@@ -1,0 +1,61 @@
+# Network context for the SYNTHETIC lab (10.10.0.0/16). Same format as the top-level
+# network_context.yaml; this one matches the addressing that synthetic/generate_lab.py emits,
+# so `hunt.py --netcontext synthetic/network_context.yaml` scores it with zone awareness.
+name: Synthetic corp network
+
+zones:
+  - name: domain
+    cidrs: [10.10.0.8/29]            # DC01 .10, DC02 .11
+    criticality: 5
+    description: Active Directory domain controllers.
+  - name: database
+    cidrs: [10.10.0.30/32]           # SQL01
+    criticality: 4
+    description: Database server with sensitive data.
+  - name: management
+    cidrs: [10.10.0.48/28]           # JUMP01 .50, SCCM01 .60
+    criticality: 4
+    description: Admin jump host and software deployment.
+  - name: servers
+    cidrs: [10.10.0.16/28, 10.10.0.40/32]   # FS01 .20, WEB01 .40
+    criticality: 3
+    description: File and web servers.
+  - name: workstations
+    cidrs: [10.10.1.0/24]
+    criticality: 2
+    description: Employee workstations (incl. the IT admin's WS-ADM).
+  - name: external
+    cidrs: [0.0.0.0/0]
+    criticality: 1
+    description: The internet and anything outside the company.
+
+allowed_flows:
+  - {from: workstations, to: servers,   why: file / web / app access}
+  - {from: workstations, to: database,  why: application queries}
+  - {from: workstations, to: domain,    why: Kerberos / LDAP / DNS}
+  - {from: workstations, to: external,  why: web browsing}
+  - {from: servers,      to: domain,    why: service logon}
+  - {from: servers,      to: database,  why: app -> db}
+  - {from: servers,      to: external,  why: updates}
+  - {from: management,   to: workstations, why: deployment / admin}
+  - {from: management,   to: servers,      why: deployment / admin}
+  - {from: management,   to: database,     why: admin}
+  - {from: management,   to: domain,       why: admin}
+
+violation_hunts: [LM-01, LM-02, LM-03, LM-05, LM-06, LM-07, C2-01, C2-02, C2-03, C2-04]
+
+threat_model:
+  - {id: TM-01, name: Workstation beaconing to C2, technique: T1071.001, hunts: [C2-01, C2-04], path: "workstations -> external"}
+  - {id: TM-02, name: C2 tunnel / exfil, technique: T1572, hunts: [C2-02], path: "workstations -> external"}
+  - {id: TM-03, name: C2 via DGA, technique: T1568.002, hunts: [C2-03], path: "workstations -> external"}
+  - {id: TM-04, name: Internal recon, technique: T1046, hunts: [LM-08], path: "workstations -> *"}
+  - {id: TM-05, name: Kerberoasting, technique: T1558.003, hunts: [LM-06], path: "workstations -> domain"}
+  - {id: TM-06, name: Lateral movement (PsExec), technique: T1021.002, hunts: [LM-01], path: "workstations -> workstations/servers"}
+  - {id: TM-07, name: Pass-the-hash fan-out, technique: T1550.002, hunts: [LM-05], path: "workstations -> workstations"}
+  - {id: TM-08, name: DCSync, technique: T1003.006, hunts: [LM-07], path: "workstations -> domain"}
+  - {id: TM-09, name: Remote exec (WMI / scheduled task), technique: "T1047 / T1053.005", hunts: [LM-02, LM-03], path: "workstations -> *"}
+
+critical_assets:
+  - {ip: 10.10.0.10, name: DC01, criticality: 5}
+  - {ip: 10.10.0.11, name: DC02, criticality: 5}
+  - {ip: 10.10.0.30, name: SQL01, criticality: 4}

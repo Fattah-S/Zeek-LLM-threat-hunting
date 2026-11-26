@@ -44,6 +44,8 @@ hunt findings (each with a MITRE ATT&CK id and Zeek uids), an ML risk score with
 and raw Zeek log rows pulled as evidence. Write a triage card for a tier-2 analyst.
 Rules:
 - Use ONLY the facts in the case. Every evidence claim must cite a finding id (e.g. LM-01) or a Zeek uid.
+- If the case has network_context (zone policy + threat model), use it: call out flows that break the zone
+  policy and name the matching threat-model scenario; a violation into a critical zone raises the assessment.
 - Say what is known vs. guessed. If a benign explanation is plausible (admin tool, backup job), list it.
 - Order the attack story by time and name the ATT&CK technique for each step.
 - Next steps must be concrete (isolate host X, reset account Y, check EDR on Z, query ...).
@@ -79,7 +81,10 @@ def build_prompt(case, evidence):
     slim["hosts"] = [{k: h[k] for k in ["name", "ip", "role", "score", "ml_risk", "hunt_score"]} |
                      {"explanations": [r["explanation"] for r in h["explanations"]]} for h in case["hosts"][:4]]
     slim["findings"] = [{k: f[k] for k in ["hunt", "name", "attack", "severity", "src_name", "dst_name", "count", "first_ts", "detail"]}
+                        | {kk: f[kk] for kk in ("policy", "zone_src", "zone_dst", "threat_name") if f.get(kk)}
                         for f in case["findings"]]
+    if case.get("context"):
+        slim["network_context"] = case["context"]   # policy violations, critical zones reached, threats matched
     return json.dumps({"case": slim, "zeek_evidence": evidence}, default=str)
 
 

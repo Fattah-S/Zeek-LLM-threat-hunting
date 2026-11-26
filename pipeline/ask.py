@@ -13,6 +13,7 @@ import sys
 import time
 
 import llm
+import netcontext
 import store
 
 SYSTEM = """You are a SOC assistant for a network security monitoring platform.
@@ -20,13 +21,19 @@ You get CONTEXT produced by the platform for one day of Zeek network logs:
 - cases ranked by risk score. Each host has an ML risk (Isolation Forest, compared with that host's own normal),
   explanation reasons (why the model scored it high: "feature = today's value (this host usually X)"),
   and hunt findings (known attacker techniques with MITRE ATT&CK ids and evidence).
+- if present, "network_context": the defender's own network — zones and how critical each is, which
+  zone-to-zone flows are allowed, and a threat model mapped to ATT&CK. Each finding carries a "policy"
+  (allowed / violation) and may carry the "threat" it matches from that model.
 Rules:
 1. Answer ONLY from the CONTEXT. If it does not contain the answer, say so. Never invent hosts, IPs, domains or techniques.
 2. Lead with the most important finding. For each abnormal behaviour give: host, what happened, why it was flagged
    (quote the explanation reason or hunt evidence), and the ATT&CK technique.
-3. Cite sources in square brackets, e.g. [HUNT-001 LM-07] or [EXPL WS-04].
-4. Separate confirmed hunt evidence from ML-only anomalies (leads to check, not alerts).
-5. End with 2-4 concrete next steps. Be concise: an analyst reads this in one minute."""
+3. Use the network_context when it is there: say when a flow BREAKS the zone policy (e.g. "a workstation
+   reaching the domain zone") and name the matching threat-model scenario. A policy violation into a
+   critical zone is more urgent than a loud anomaly that breaks no policy.
+4. Cite sources in square brackets, e.g. [HUNT-001 LM-07] or [EXPL WS-04].
+5. Separate confirmed hunt evidence from ML-only anomalies (leads to check, not alerts).
+6. End with 2-4 concrete next steps. Be concise: an analyst reads this in one minute."""
 
 
 def build_context(top=5, db=store.DB):
@@ -36,14 +43,22 @@ def build_context(top=5, db=store.DB):
     cases = json.loads(run["cases_json"])
     ctx = {"day": run["day"], "hosts_scored": run["hosts_scored"], "hunt_hits": run["findings_total"],
            "suppressed_as_known_admin_behaviour": run["findings_suppressed"], "cases": []}
+    if cases.get("netcontext"):
+        nc = netcontext.NetContext(cases["netcontext"])
+        ctx["network_context"] = nc.summary()
     for c in cases["cases"][:top]:
+        cc = c.get("context") or {}
         ctx["cases"].append({
             "case_id": c["case_id"], "score": c["score"], "severity": c["severity"], "tactics": c["tactics"],
+            "policy_violations": cc.get("violations"), "critical_zones_reached": cc.get("critical_zones_reached"),
+            "threats_matched": [t["name"] for t in cc.get("threats", [])],
             "hosts": [{"name": h["name"], "ip": h["ip"], "role": h["role"], "ml_risk": h["ml_risk"],
                        "hunt_score": h["hunt_score"], "why_flagged": [r["explanation"] for r in h["explanations"][:4]]}
                       for h in c["hosts"] if h["hunt_score"] > 0 or h["ml_risk"] >= 80][:4],
             "findings": [{"id": f["hunt"], "technique": f["name"], "attack": f["attack"], "src": f["src_name"],
-                          "dst": f["dst_name"], "evidence": f["detail"]} for f in c["findings"]][:12],
+                          "dst": f["dst_name"], "evidence": f["detail"],
+                          "policy": f.get("policy"), "zone": (f.get("zone_src", "") + "->" + f.get("zone_dst", "")) if f.get("zone_src") else None,
+                          "threat": f.get("threat_name")} for f in c["findings"]][:12],
             "touched_hosts": [t["name"] for t in c["touched_hosts"]][:10]})
     return ctx, run["run_id"]
 
@@ -56,8 +71,14 @@ def template_answer(ctx):
     for c in ctx["cases"]:
         h = c["hosts"][0] if c["hosts"] else {"name": "?", "why_flagged": []}
         techs = "; ".join(f"{f['technique']} ({f['attack'].split(',')[0]}) {f['src']} -> {f['dst']}" for f in c["findings"][:6])
+        pol = ""
+        if c.get("policy_violations"):
+            zones = ", ".join(c.get("critical_zones_reached") or []) or "no critical zone"
+            threats = ", ".join(c.get("threats_matched") or [])
+            pol = (f" Network policy: {c['policy_violations']} flow(s) break the zone policy, reaching {zones}"
+                   + (f"; matches your threat model ({threats})" if threats else "") + ".")
         lines.append(f"[{c['case_id']}] {c['severity']} {h['name']}: {techs or 'ML anomaly only'}. "
-                     f"Why: {'; '.join(h['why_flagged'][:2])}.")
+                     f"Why: {'; '.join(h['why_flagged'][:2])}.{pol}")
     return "\n".join(lines)
 
 
