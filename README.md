@@ -1,6 +1,6 @@
 # Zeek AI Threat Hunting
 
-AI-assisted network security monitoring on Zeek logs:
+**A prototype for building an AI-assisted NSM (Network Security Monitoring) platform** on Zeek logs: threat hunting for lateral movement and C2, ML risk scoring explained with SHAP, and an open-source LLM that writes the triage for the analyst.
 
 ```
 Zeek ─► SIEM (Microsoft Sentinel) ─► hunts + ML risk score ─► SHAP (why) ─► open-source LLM (Ollama) writes the triage ─► analyst TP/FP ─► feedback retrains the model
@@ -20,3 +20,7 @@ cd threat-hunting && pip install -r requirements.txt && bash run_demo.sh
 ```
 
 **Status: prototype.** Tested only on synthetic data; thresholds and Sentinel table names are guesses (marked `GUESS:` in the code). The LLM runs locally through Ollama (`ollama pull qwen3:14b`), so no logs leave your network.
+
+## License
+
+[MIT](LICENSE)
