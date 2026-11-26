@@ -1,4 +1,4 @@
-# Zeek AI Threat Hunting
+# Zeek LLM Threat Hunting
 
 **A prototype for building an AI-assisted NSM (Network Security Monitoring) platform** on Zeek logs: threat hunting for lateral movement and C2, ML risk scoring explained with SHAP, and an open-source LLM that writes the triage for the analyst.
 
